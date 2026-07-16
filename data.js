@@ -1,0 +1,383 @@
+// エンジニアツール動向のモックデータ
+export const categories = {
+  ai: "AI & LLM",
+  languages: "Languages & Runtimes",
+  frameworks: "Frameworks & Libraries",
+  databases: "Databases & Backend",
+  productivity: "Productivity & Terminals",
+  gadgets: "Gadgets & Hardware"
+};
+
+// 各カテゴリに属するツール/ガジェットのデータ
+export const toolsData = [
+  // --- AI & LLM ---
+  {
+    id: "claude",
+    name: "Claude 3.5 Sonnet",
+    category: "ai",
+    trendScore: 98,
+    mentions24h: 3820,
+    mentions7d: 24500,
+    mentions30d: 98000,
+    description: "卓越したコーディング能力と論理的思考で、現在最もエンジニア間で支持されているLLMモデル。",
+    trendData: [65, 70, 72, 78, 80, 85, 90, 92, 95, 98],
+    isAffiliate: false,
+    url: "https://www.anthropic.com/claude"
+  },
+  {
+    id: "cursor",
+    name: "Cursor",
+    category: "ai",
+    trendScore: 95,
+    mentions24h: 3410,
+    mentions7d: 22100,
+    mentions30d: 87000,
+    description: "AIとの対話機能が強力に統合された、VS Codeベースの次世代コードエディタ。",
+    trendData: [50, 55, 62, 70, 78, 82, 85, 88, 92, 95],
+    isAffiliate: false,
+    url: "https://www.cursor.com/"
+  },
+  {
+    id: "github-copilot",
+    name: "GitHub Copilot",
+    category: "ai",
+    trendScore: 88,
+    mentions24h: 2100,
+    mentions7d: 15400,
+    mentions30d: 64000,
+    description: "IDE内に統合され、リアルタイムでインライン補完やチャット支援を行う開発の必須ツール。",
+    trendData: [85, 86, 87, 85, 88, 89, 87, 88, 89, 88],
+    isAffiliate: false,
+    url: "https://github.com/features/copilot"
+  },
+  {
+    id: "chatgpt",
+    name: "ChatGPT (GPT-4o)",
+    category: "ai",
+    trendScore: 85,
+    mentions24h: 1950,
+    mentions7d: 14200,
+    mentions30d: 61000,
+    description: "一般的なコーディングの質問やブレインストーミングで幅広く使われるOpenAIのフラグシップAI。",
+    trendData: [88, 87, 85, 84, 83, 85, 86, 85, 84, 85],
+    isAffiliate: false,
+    url: "https://chatgpt.com/"
+  },
+  {
+    id: "v0",
+    name: "v0 by Vercel",
+    category: "ai",
+    trendScore: 82,
+    mentions24h: 1450,
+    mentions7d: 11000,
+    mentions30d: 45000,
+    description: "自然言語からReactコンポーネントやTailwind UIを一瞬で生成するフロントエンド特化AI。",
+    trendData: [30, 42, 55, 60, 68, 72, 75, 78, 80, 82],
+    isAffiliate: false,
+    url: "https://v0.dev/"
+  },
+
+  // --- Languages & Runtimes ---
+  {
+    id: "typescript",
+    name: "TypeScript",
+    category: "languages",
+    trendScore: 92,
+    mentions24h: 2900,
+    mentions7d: 19800,
+    mentions30d: 82000,
+    description: "静的型付けによる堅牢なフロントエンド/バックエンド開発を支える、現代Web開発のデファクトスタンダード。",
+    trendData: [90, 91, 90, 92, 93, 91, 92, 92, 91, 92],
+    isAffiliate: false,
+    url: "https://www.typescriptlang.org/"
+  },
+  {
+    id: "rust",
+    name: "Rust",
+    category: "languages",
+    trendScore: 90,
+    mentions24h: 2750,
+    mentions7d: 18900,
+    mentions30d: 79000,
+    description: "高いメモリ安全性と実行速度を誇り、システム開発からWebAssemblyまで注目の集まる言語。",
+    trendData: [85, 87, 86, 88, 89, 90, 88, 89, 90, 90],
+    isAffiliate: false,
+    url: "https://www.rust-lang.org/"
+  },
+  {
+    id: "go",
+    name: "Go",
+    category: "languages",
+    trendScore: 84,
+    mentions24h: 1800,
+    mentions7d: 13100,
+    mentions30d: 55000,
+    description: "シンプルな言語仕様と並行処理能力により、クラウドネイティブやマイクロサービスで広く利用される言語。",
+    trendData: [80, 81, 83, 82, 84, 83, 85, 84, 83, 84],
+    isAffiliate: false,
+    url: "https://go.dev/"
+  },
+  {
+    id: "python",
+    name: "Python",
+    category: "languages",
+    trendScore: 82,
+    mentions24h: 1720,
+    mentions7d: 12500,
+    mentions30d: 53000,
+    description: "機械学習、データ分析、AIスクリプティング領域で圧倒的なシェアとライブラリ群を持つ定番言語。",
+    trendData: [85, 84, 83, 82, 81, 83, 84, 82, 81, 82],
+    isAffiliate: false,
+    url: "https://www.python.org/"
+  },
+  {
+    id: "zig",
+    name: "Zig",
+    category: "languages",
+    trendScore: 68,
+    mentions24h: 620,
+    mentions7d: 4500,
+    mentions30d: 18500,
+    description: "C言語の代替を目指し、マクロを使わないシンプルな仕様と高速なコンパイル速度で人気急上昇中の言語。",
+    trendData: [45, 48, 52, 55, 58, 60, 62, 65, 66, 68],
+    isAffiliate: false,
+    url: "https://ziglang.org/"
+  },
+
+  // --- Frameworks & Libraries ---
+  {
+    id: "react",
+    name: "React",
+    category: "frameworks",
+    trendScore: 90,
+    mentions24h: 2800,
+    mentions7d: 19100,
+    mentions30d: 81000,
+    description: "世界中のプロジェクトで圧倒的な採用率を誇る、Meta製のコンポーネントベースUIライブラリ。",
+    trendData: [90, 89, 91, 90, 88, 90, 89, 91, 90, 90],
+    isAffiliate: false,
+    url: "https://react.dev/"
+  },
+  {
+    id: "nextjs",
+    name: "Next.js",
+    category: "frameworks",
+    trendScore: 89,
+    mentions24h: 2600,
+    mentions7d: 18200,
+    mentions30d: 76000,
+    description: "App Routerやサーバーアクション等の高度な機能を備え、Reactアプリの標準基盤となるフルスタックフレームワーク。",
+    trendData: [84, 85, 87, 86, 88, 87, 89, 88, 89, 89],
+    isAffiliate: false,
+    url: "https://nextjs.org/"
+  },
+  {
+    id: "astro",
+    name: "Astro",
+    category: "frameworks",
+    trendScore: 85,
+    mentions24h: 1850,
+    mentions7d: 13000,
+    mentions30d: 54000,
+    description: "不要なJavaScriptを排除するアイランドアーキテクチャにより、極限の表示速度を実現するコンテンツ特化型フレームワーク。",
+    trendData: [68, 70, 74, 76, 79, 81, 82, 84, 83, 85],
+    isAffiliate: false,
+    url: "https://astro.build/"
+  },
+  {
+    id: "svelte",
+    name: "Svelte / SvelteKit",
+    category: "frameworks",
+    trendScore: 78,
+    mentions24h: 980,
+    mentions7d: 7100,
+    mentions30d: 30000,
+    description: "仮想DOMを使わず、ビルド時にコードを直接DOM変更命令に変換する軽量・高効率なフレームワーク。",
+    trendData: [72, 73, 74, 75, 76, 78, 77, 78, 79, 78],
+    isAffiliate: false,
+    url: "https://svelte.dev/"
+  },
+  {
+    id: "tailwind-css",
+    name: "Tailwind CSS",
+    category: "frameworks",
+    trendScore: 88,
+    mentions24h: 2150,
+    mentions7d: 14900,
+    mentions30d: 62000,
+    description: "HTMLクラス内に直接スタイリングを記述でき、直感的でスピーディなUI構築を可能にするユーティリティファーストCSSフレームワーク。",
+    trendData: [85, 86, 87, 86, 88, 88, 87, 89, 88, 88],
+    isAffiliate: false,
+    url: "https://tailwindcss.com/"
+  },
+
+  // --- Databases & Backend ---
+  {
+    id: "postgresql",
+    name: "PostgreSQL",
+    category: "databases",
+    trendScore: 91,
+    mentions24h: 2650,
+    mentions7d: 18500,
+    mentions30d: 77000,
+    description: "拡張性と信頼性に優れ、現在多くのスタートアップやモダン開発で第1選択肢とされるRDB。",
+    trendData: [88, 89, 90, 89, 91, 90, 91, 91, 90, 91],
+    isAffiliate: false,
+    url: "https://www.postgresql.org/"
+  },
+  {
+    id: "supabase",
+    name: "Supabase",
+    category: "databases",
+    trendScore: 87,
+    mentions24h: 1750,
+    mentions7d: 12400,
+    mentions30d: 52000,
+    description: "Firebase代替のオープンソース筆頭。PostgreSQLを基盤に、認証やストレージを即座に構築可能なBaaS。",
+    trendData: [75, 78, 80, 81, 83, 85, 84, 86, 87, 87],
+    isAffiliate: false,
+    url: "https://supabase.com/"
+  },
+  {
+    id: "redis",
+    name: "Redis",
+    category: "databases",
+    trendScore: 82,
+    mentions24h: 1350,
+    mentions7d: 9800,
+    mentions30d: 41000,
+    description: "メモリ内データ構造ストアとして、高速なキャッシュ、セッションストア、メッセージキュー用途で不動の人気。",
+    trendData: [80, 81, 81, 82, 83, 82, 84, 83, 81, 82],
+    isAffiliate: false,
+    url: "https://redis.io/"
+  },
+  {
+    id: "cloudflare-workers-d1",
+    name: "Cloudflare D1 / Workers",
+    category: "databases",
+    trendScore: 86,
+    mentions24h: 1680,
+    mentions7d: 11900,
+    mentions30d: 49000,
+    description: "グローバルなエッジで動作するサーバーレス関数と、SQLiteをベースとした超低遅延エッジデータベース。",
+    trendData: [68, 72, 75, 78, 80, 82, 83, 85, 85, 86],
+    isAffiliate: false,
+    url: "https://developers.cloudflare.com/d1/"
+  },
+
+  // --- Productivity & Terminals ---
+  {
+    id: "raycast",
+    name: "Raycast",
+    category: "productivity",
+    trendScore: 89,
+    mentions24h: 1900,
+    mentions7d: 13900,
+    mentions30d: 58000,
+    description: "Macの標準Spotlightを置き換える、拡張性と動作速度に優れた超高速キーボードランチャー。",
+    trendData: [78, 80, 82, 84, 85, 87, 88, 88, 89, 89],
+    isAffiliate: false,
+    url: "https://www.raycast.com/"
+  },
+  {
+    id: "obsidian",
+    name: "Obsidian",
+    category: "productivity",
+    trendScore: 85,
+    mentions24h: 1550,
+    mentions7d: 11200,
+    mentions30d: 47000,
+    description: "ローカルのMarkdownファイルを基に、個人の思考ネットワークを整理できる強力なナレッジベースツール。",
+    trendData: [80, 82, 81, 83, 84, 85, 84, 86, 85, 85],
+    isAffiliate: false,
+    url: "https://obsidian.md/"
+  },
+  {
+    id: "warp",
+    name: "Warp Terminal",
+    category: "productivity",
+    trendScore: 80,
+    mentions24h: 1200,
+    mentions7d: 8700,
+    mentions30d: 37000,
+    description: "Rustで書かれた超高速ターミナル。AI統合、モダンなエディタ風入力、チームでのコマンド共有が特徴。",
+    trendData: [65, 68, 70, 72, 75, 78, 79, 81, 79, 80],
+    isAffiliate: false,
+    url: "https://www.warp.dev/"
+  },
+  {
+    id: "docker",
+    name: "Docker / Containers",
+    category: "productivity",
+    trendScore: 91,
+    mentions24h: 2700,
+    mentions7d: 19000,
+    mentions30d: 79000,
+    description: "環境差異をなくし、再現可能なアプリケーションの開発・デプロイ環境を提供するコンテナ技術の業界標準。",
+    trendData: [90, 89, 91, 90, 90, 92, 91, 91, 90, 91],
+    isAffiliate: false,
+    url: "https://www.docker.com/"
+  },
+
+  // --- Gadgets & Hardware (Affiliate) ---
+  {
+    id: "hhkb-studio",
+    name: "HHKB Studio",
+    category: "gadgets",
+    trendScore: 92,
+    mentions24h: 1100,
+    mentions7d: 8200,
+    mentions30d: 34000,
+    description: "キーボードから手を離さずに操作できる「ポインティングスティック」と「ジェスチャーパッド」を搭載した、HHKBの最高峰フラグシップモデル。静音メカニカルスイッチによる軽快な極上の打鍵感。",
+    trendData: [75, 78, 80, 83, 85, 88, 90, 91, 90, 92],
+    isAffiliate: true,
+    affiliatePrice: "¥44,000",
+    url: "https://amzn.to/example-hhkb-studio", // 実際にはユーザーのアフィリンクが入る
+    imageName: "hhkb_studio.png"
+  },
+  {
+    id: "mx-master-3s",
+    name: "Logicool MX Master 3S",
+    category: "gadgets",
+    trendScore: 89,
+    mentions24h: 950,
+    mentions7d: 7100,
+    mentions30d: 29000,
+    description: "静音クリック、1秒間に1000行スクロール可能なMagSpeed電磁気スクロールホイールを搭載。エルゴノミクスに基づいた究極の快適性を持つ、プロの開発者のための高機能マウス。",
+    trendData: [85, 86, 85, 87, 88, 87, 88, 89, 88, 89],
+    isAffiliate: true,
+    affiliatePrice: "¥16,900",
+    url: "https://amzn.to/example-mx-master-3s",
+    imageName: "mx_master_3s.png"
+  },
+  {
+    id: "keychron-q1-max",
+    name: "Keychron Q1 Max",
+    category: "gadgets",
+    trendScore: 83,
+    mentions24h: 680,
+    mentions7d: 4900,
+    mentions30d: 21000,
+    description: "フルアルミボディ、ガスケットマウント設計による圧倒的に高品質でコトコト心地いい打鍵サウンド。ホットスワップ対応や2.4GHzワイヤレス、QMK/VIAによる自在なキーカスタムが可能な最高峰自作系キーボード。",
+    trendData: [70, 72, 73, 76, 78, 80, 82, 81, 82, 83],
+    isAffiliate: true,
+    affiliatePrice: "¥36,800",
+    url: "https://amzn.to/example-keychron-q1",
+    imageName: "keychron_q1.png"
+  },
+  {
+    id: "mx-ergo",
+    name: "Logicool MX ERGO",
+    category: "gadgets",
+    trendScore: 80,
+    mentions24h: 520,
+    mentions7d: 3900,
+    mentions30d: 16000,
+    description: "傾斜角を0度または20度にカスタマイズ可能。腕や手首への負担を劇的に減らすプレミアム親指操作トラックボール。長時間のコーディングセッションでも圧倒的な疲れにくさを提供。",
+    trendData: [78, 79, 78, 80, 81, 80, 79, 81, 80, 80],
+    isAffiliate: true,
+    affiliatePrice: "¥15,400",
+    url: "https://amzn.to/example-mx-ergo",
+    imageName: "mx_ergo.png"
+  }
+];

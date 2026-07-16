@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>eTools Trend | エンジニアのツール・トレンド動向調査</title>
+  <meta name="description" content="RedditやStack Overflowなどの開発コミュニティを調査し、いまエンジニアの間で最も人気・話題になっているツール、言語、AI、ガジェットをリアルタイム感覚で可視化するトレンドヒートマップです。">
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <!-- ヘッダー -->
+    <header>
+      <div class="logo-section">
+        <h1>eTools Trend</h1>
+        <p>エンジニアリングツールの注目度・動向調査ヒートマップ</p>
+      </div>
+      <div class="meta-info">
+        <p>データソース: Reddit, Stack Overflow (シミュレーション値)</p>
+        <p>更新頻度: 24時間ごと</p>
+      </div>
+    </header>
+
+    <!-- フィルターコントロール -->
+    <section class="controls-section">
+      <div class="tabs" id="categoryTabs">
+        <button class="tab-btn active" data-category="all">すべて</button>
+        <button class="tab-btn" data-category="ai">AI & LLM</button>
+        <button class="tab-btn" data-category="languages">開発言語</button>
+        <button class="tab-btn" data-category="frameworks">フレームワーク</button>
+        <button class="tab-btn" data-category="databases">データベース</button>
+        <button class="tab-btn" data-category="productivity">生産性ツール</button>
+      </div>
+      <div class="time-filters" id="timeFilters">
+        <button class="filter-btn active" data-time="24h">24時間</button>
+        <button class="filter-btn" data-time="7d">7日間</button>
+        <button class="filter-btn" data-time="30d">30日間</button>
+      </div>
+    </section>
+
+    <!-- メイングリッド (ヒートマップ & 詳細パネル) -->
+    <main class="main-grid">
+      <!-- 左：ヒートマップ -->
+      <section class="heatmap-panel">
+        <h2 class="panel-title" id="panelCategoryTitle">
+          <svg class="panel-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.25-2.5 3-2.5 5h20c0-2-1-3.75-2.5-5"></path><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2Z"></path><path d="M12 6v12"></path><path d="M8 10h8"></path></svg>
+          ツール言及数ヒートマップ
+        </h2>
+        <div class="heatmap-grid" id="heatmapGrid">
+          <!-- JSで動的にセルを挿入 -->
+        </div>
+      </section>
+
+      <!-- 右：ツール詳細 & トレンド推移 -->
+      <section class="details-panel" id="detailsPanel">
+        <div class="details-content">
+          <div class="details-header">
+            <h3 id="detailName">ツールを選択</h3>
+            <span class="tag" id="detailCategory">カテゴリ</span>
+          </div>
+          <p class="details-desc" id="detailDesc">
+            ヒートマップ内のツールをクリックすると、過去30日間の言及トレンドや詳細情報がここに表示されます。
+          </p>
+          
+          <h4 style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 600;">過去30日間の言及トレンド</h4>
+          <!-- トレンド推移グラフ (SVG) -->
+          <div class="chart-container">
+            <svg class="chart-svg" id="trendChart">
+              <defs>
+                <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="var(--accent-blue)" stop-opacity="0.2"/>
+                  <stop offset="100%" stop-color="var(--accent-blue)" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <!-- JSで動的にパスや軸を描画 -->
+            </svg>
+          </div>
+        </div>
+
+        <div class="stat-grid">
+          <div class="stat-box">
+            <p class="stat-label">期間中の言及数</p>
+            <p class="stat-val" id="statMentions">-</p>
+          </div>
+          <div class="stat-box">
+            <p class="stat-label">トレンド順位</p>
+            <p class="stat-val" id="statRank">-</p>
+          </div>
+          <div class="stat-box">
+            <p class="stat-label">注目度スコア</p>
+            <p class="stat-val" id="statScore">-</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ガジェット紹介 & アフィリエイト -->
+    <section class="gadgets-section">
+      <h2 class="section-title">Essential Developer Gadgets</h2>
+      <p class="section-subtitle">エンジニアの間で話題になっている最高峰の入力デバイスとガジェット</p>
+      
+      <div class="gadgets-grid" id="gadgetsGrid">
+        <!-- JSで動的にアフィリエイトカードを挿入 -->
+      </div>
+    </section>
+
+    <!-- フッター -->
+    <footer>
+      <p>&copy; 2026 eTools Trend. All rights reserved.</p>
+    </footer>
+  </div>
+
+  <!-- ツールチップ -->
+  <div class="tooltip" id="tooltip"></div>
+
+  <!-- JS -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
