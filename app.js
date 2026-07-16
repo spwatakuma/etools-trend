@@ -37,7 +37,7 @@ async function init() {
       throw new Error('API response was not OK');
     }
   } catch (error) {
-    // APIが動作していない場合やローカル環境時は、事前に用意したbaseToolsDataをフォールバック使用
+    // APIが動作していない場合やローカル環境時は、事前に用意した最新のbaseToolsDataをフォールバック使用
     console.warn('API fetch failed. Falling back to local data:', error);
     activeToolsData = baseToolsData;
   }
@@ -48,7 +48,6 @@ async function init() {
   
   // 初期表示として最もトレンドスコアの高いツールを選択状態にする
   const initialTool = activeToolsData
-    .filter(t => !t.isAffiliate)
     .sort((a, b) => b.trendScore - a.trendScore)[0];
   if (initialTool) {
     selectTool(initialTool.id);
@@ -81,6 +80,7 @@ function setupEventListeners() {
     
     currentCategory = btn.dataset.category;
     renderHeatmap();
+    renderGadgets(); // ガジェットアフィリエイト枠もカテゴリで絞り込む
   });
 
   // 期間フィルター切り替え
@@ -102,14 +102,9 @@ function setupEventListeners() {
 }
 
 // --- ツリーマップの再帰レイアウトアルゴリズム (Slice-and-Dice) ---
-// items: レイアウトする要素配列
-// x, y: 開始座標 (0〜100%)
-// width, height: 利用可能な幅と高さ (0〜100%)
-// vertical: 分割方向 (縦か横か)
 function layoutTreemap(items, x, y, width, height, vertical) {
   if (items.length === 0) return;
   
-  // 残り要素が1つの場合、領域全体を割り当て
   if (items.length === 1) {
     items[0].x = x;
     items[0].y = y;
@@ -118,18 +113,15 @@ function layoutTreemap(items, x, y, width, height, vertical) {
     return;
   }
   
-  // 合計言及数を算出
   const totalValue = items.reduce((sum, item) => sum + item.treemapValue, 0);
   if (totalValue === 0) {
-    // 0の場合は均等分割
-    items.forEach((item, idx) => {
+    items.forEach((item) => {
       item.treemapValue = 1;
     });
     layoutTreemap(items, x, y, width, height, vertical);
     return;
   }
   
-  // 配列をバランス良く2つのグループに分割 (累計が全体の半分に最も近づく位置)
   let currentSum = 0;
   let splitIndex = 0;
   for (let i = 0; i < items.length; i++) {
@@ -145,7 +137,6 @@ function layoutTreemap(items, x, y, width, height, vertical) {
   const part1Value = part1.reduce((sum, item) => sum + item.treemapValue, 0);
   const ratio = part1Value / totalValue;
   
-  // 縦または横に分割して再帰
   if (vertical) {
     const w1 = width * ratio;
     layoutTreemap(part1, x, y, w1, height, !vertical);
@@ -168,8 +159,8 @@ function getIntensityClass(score) {
 
 // --- ヒートマップ (ツリーマップ) のレンダリング ---
 function renderHeatmap() {
-  // アフィリエイトではないソフトウェアツールのみを抽出
-  let filtered = activeToolsData.filter(tool => !tool.isAffiliate);
+  // アフィリエイト商品（ガジェット、PCパーツ）もすべてツリーマップに統合して総括表示
+  let filtered = [...activeToolsData];
   
   if (currentCategory !== 'all') {
     filtered = filtered.filter(tool => tool.category === currentCategory);
@@ -177,19 +168,15 @@ function renderHeatmap() {
 
   const mentionsKey = getMentionsKey();
   
-  // ツリーマップの「面積（Value）」として30日間の総言及数(mentions30d)を使用し、
-  // リサイズや切り替え時に崩れないよう面積計算用のプロパティをセット
   filtered.forEach(tool => {
     tool.treemapValue = tool[mentionsKey] || 10;
   });
 
-  // 面積の大きい順にソート (ツリーマップが綺麗に収まるための必須処理)
   filtered.sort((a, b) => b.treemapValue - a.treemapValue);
 
-  // グリッドをクリアし、ツリーマップ用の相対配置にセット
   heatmapGrid.innerHTML = '';
   heatmapGrid.style.position = 'relative';
-  heatmapGrid.style.height = '480px'; // 固定高さ (CSS側と連動)
+  heatmapGrid.style.height = '480px'; 
   heatmapGrid.style.width = '100%';
 
   if (filtered.length === 0) {
@@ -197,25 +184,20 @@ function renderHeatmap() {
     return;
   }
 
-  // 2. ツリーマップアルゴリズムで各タイルの座標 (x, y, w, h) を計算
   layoutTreemap(filtered, 0, 0, 100, 100, true);
 
-  // 3. タイルをDOMに配置
   filtered.forEach(tool => {
     const cell = document.createElement('div');
     const intensity = getIntensityClass(tool.trendScore);
     cell.className = `heatmap-cell ${intensity}`;
     cell.dataset.id = tool.id;
     
-    // 計算された座標をインラインCSS（パーセンテージ）で適用
     cell.style.position = 'absolute';
     cell.style.left = `${tool.x}%`;
     cell.style.top = `${tool.y}%`;
     cell.style.width = `${tool.w}%`;
     cell.style.height = `${tool.h}%`;
     cell.style.border = '1px solid var(--border-light)';
-    
-    // タイル同士の隙間（余白）を微調整
     cell.style.boxSizing = 'border-box';
     
     if (tool.id === selectedToolId) {
@@ -226,22 +208,23 @@ function renderHeatmap() {
 
     const mentions = tool[mentionsKey].toLocaleString();
 
-    // タイルのサイズ（幅・高さ）に応じてテキストの表示方法を最適化
-    // 面積が極端に小さいタイルは、フォントを極小にし、余計なスタッツを表示しないようにする
     const isSmall = tool.w < 12 || tool.h < 12;
     const isTiny = tool.w < 7 || tool.h < 7;
 
+    // アフィリエイト商品（ガジェット、PCパーツ）には名前の前に🛒マークを付与して視覚的に区別
+    const prefix = tool.isAffiliate ? '🛒 ' : '';
+
     if (isTiny) {
       cell.innerHTML = `
-        <span class="cell-name" style="font-size: 0.65rem; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; display: block;">${tool.name[0]}</span>
+        <span class="cell-name" style="font-size: 0.65rem; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; display: block;">${prefix || tool.name[0]}</span>
       `;
     } else if (isSmall) {
       cell.innerHTML = `
-        <span class="cell-name" style="font-size: 0.7rem; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; display: block;">${tool.name}</span>
+        <span class="cell-name" style="font-size: 0.7rem; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; display: block;">${prefix}${tool.name}</span>
       `;
     } else {
       cell.innerHTML = `
-        <span class="cell-name">${tool.name}</span>
+        <span class="cell-name">${prefix}${tool.name}</span>
         <span class="cell-score" style="font-size: 0.95rem;">${tool.trendScore}</span>
       `;
     }
@@ -252,7 +235,8 @@ function renderHeatmap() {
     // ツールチップ用ホバーイベント
     cell.addEventListener('mouseenter', (e) => {
       tooltip.style.opacity = '1';
-      tooltip.innerHTML = `<strong>${tool.name}</strong><br>期間中: ${mentions}言及 (${currentTimeFilter})<br>トレンド: ${tool.trendScore}点`;
+      const typeStr = tool.isAffiliate ? '（ガジェット・パーツ）' : '';
+      tooltip.innerHTML = `<strong>${tool.name} ${typeStr}</strong><br>期間中: ${mentions}言及 (${currentTimeFilter})<br>注目トレンド: ${tool.trendScore}点`;
       positionTooltip(e);
     });
 
@@ -268,7 +252,7 @@ function renderHeatmap() {
   });
 
   // タイトルの更新
-  const catName = currentCategory === 'all' ? 'すべてのツール' : categories[currentCategory];
+  const catName = currentCategory === 'all' ? 'すべてのツール & ハードウェア' : categories[currentCategory];
   panelCategoryTitle.innerHTML = `
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
     ${catName}のツリーマップ動向 (サイズ＝言及規模 / 色＝トレンド)
@@ -317,7 +301,6 @@ function selectTool(id) {
 
   // 順位の算出
   const sortedTools = activeToolsData
-    .filter(t => !t.isAffiliate)
     .sort((a, b) => b[key] - a[key]);
   const rank = sortedTools.findIndex(t => t.id === id) + 1;
   statRank.innerText = `#${rank}`;
@@ -399,11 +382,25 @@ function renderSVGChart(data) {
   trendChart.innerHTML = svgContent;
 }
 
-// --- ガジェットアフィリエイトのレンダリング ---
+// --- ガジェット・ハードウェアアフィリエイトのレンダリング ---
 function renderGadgets() {
-  const gadgets = activeToolsData.filter(tool => tool.isAffiliate);
+  // アフィリエイト商品のみを抽出
+  let gadgets = activeToolsData.filter(tool => tool.isAffiliate);
+
+  // カテゴリが選択されている場合は、そのカテゴリに属するガジェットのみを表示
+  if (currentCategory !== 'all') {
+    gadgets = gadgets.filter(g => g.category === currentCategory);
+  }
+
+  // 表示エリアをクリア
   gadgetsGrid.innerHTML = '';
 
+  if (gadgets.length === 0) {
+    gadgetsGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 2rem;">このカテゴリには紹介ガジェット・パーツがありません。</p>';
+    return;
+  }
+
+  // 最大8個程度表示 (表示しきれない場合はスライスなどしてもよいですが、ここでは全て美しく並べます)
   gadgets.forEach(gadget => {
     const card = document.createElement('article');
     card.className = 'gadget-card';
