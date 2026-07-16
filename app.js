@@ -422,7 +422,7 @@ function renderGadgets() {
 
     card.innerHTML = `
       <div class="gadget-image-container">
-        <img class="gadget-img" src="${gadget.imageName}" alt="${gadget.name}" loading="lazy">
+        <img class="gadget-img" src="${gadget.imageName}" alt="${gadget.name}" referrerpolicy="no-referrer" loading="lazy">
       </div>
       <div class="gadget-info">
         <div>
