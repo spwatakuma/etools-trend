@@ -1,9 +1,10 @@
-import { categories, toolsData } from './data.js';
+import { categories, toolsData as baseToolsData } from './data.js';
 
 // --- アプリケーションの状態管理 (State) ---
 let currentCategory = 'all';
 let currentTimeFilter = '24h';
 let selectedToolId = null;
+let activeToolsData = []; // APIから取得したアクティブなデータ
 
 // --- DOM要素の参照 ---
 const categoryTabs = document.getElementById('categoryTabs');
@@ -23,13 +24,30 @@ const statScore = document.getElementById('statScore');
 const tooltip = document.getElementById('tooltip');
 
 // --- アプリの初期化 (Init) ---
-function init() {
+async function init() {
   setupEventListeners();
+  
+  // 1. Cloudflare Pages Functions APIからリアルタイムデータを取得
+  try {
+    const response = await fetch('/api/trends', { signal: AbortSignal.timeout(5000) });
+    if (response.ok) {
+      activeToolsData = await response.json();
+      console.log('Successfully fetched real-time trends from Cloudflare Pages Functions.');
+    } else {
+      throw new Error('API response was not OK');
+    }
+  } catch (error) {
+    // APIが動作していない場合やローカル環境時は、事前に用意した最新のbaseToolsDataをフォールバック使用
+    console.warn('API fetch failed. Falling back to local data:', error);
+    activeToolsData = baseToolsData;
+  }
+
+  // 2. レンダリングの実行
   renderHeatmap();
   renderGadgets();
   
   // 初期表示として最もトレンドスコアの高いツールを選択状態にする
-  const initialTool = toolsData
+  const initialTool = activeToolsData
     .filter(t => !t.isAffiliate)
     .sort((a, b) => b.trendScore - a.trendScore)[0];
   if (initialTool) {
@@ -44,7 +62,6 @@ function setupEventListeners() {
     const btn = e.target.closest('.tab-btn');
     if (!btn) return;
     
-    // アクティブクラスの切り替え
     categoryTabs.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     
@@ -82,7 +99,7 @@ function getIntensityClass(score) {
 // --- ヒートマップのレンダリング ---
 function renderHeatmap() {
   // アフィリエイトではないソフトウェアツールのみを抽出
-  let filtered = toolsData.filter(tool => !tool.isAffiliate);
+  let filtered = activeToolsData.filter(tool => !tool.isAffiliate);
   
   if (currentCategory !== 'all') {
     filtered = filtered.filter(tool => tool.category === currentCategory);
@@ -146,7 +163,7 @@ function renderHeatmap() {
   const catName = currentCategory === 'all' ? 'すべてのツール' : categories[currentCategory];
   panelCategoryTitle.innerHTML = `
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
-    ${catName}の注目度ヒートマップ
+    ${catName}のリアルタイム注目度ヒートマップ
   `;
 }
 
@@ -168,7 +185,7 @@ function positionTooltip(e) {
 // --- ツール選択時の処理 (詳細パネル更新) ---
 function selectTool(id) {
   selectedToolId = id;
-  const tool = toolsData.find(t => t.id === id);
+  const tool = activeToolsData.find(t => t.id === id);
   if (!tool) return;
 
   // ヒートマップのセルの選択枠をクリアして再設定
@@ -190,8 +207,8 @@ function selectTool(id) {
   statMentions.innerText = tool[key].toLocaleString();
   statScore.innerText = `${tool.trendScore}/100`;
 
-  // 順位の算出 (アフィリエイト除外、現在の期間でソート)
-  const sortedTools = toolsData
+  // 順位の算出
+  const sortedTools = activeToolsData
     .filter(t => !t.isAffiliate)
     .sort((a, b) => b[key] - a[key]);
   const rank = sortedTools.findIndex(t => t.id === id) + 1;
@@ -264,7 +281,7 @@ function renderSVGChart(data) {
     `;
   });
 
-  // 日付の簡易軸ラベル (10分割の点を表す適当な日付)
+  // 日付の簡易軸ラベル
   svgContent += `
     <text class="chart-text" x="${padding}" y="${height - 2}" text-anchor="start">30日前</text>
     <text class="chart-text" x="${width / 2}" y="${height - 2}" text-anchor="middle">15日前</text>
@@ -276,7 +293,7 @@ function renderSVGChart(data) {
 
 // --- ガジェットアフィリエイトのレンダリング ---
 function renderGadgets() {
-  const gadgets = toolsData.filter(tool => tool.isAffiliate);
+  const gadgets = activeToolsData.filter(tool => tool.isAffiliate);
   gadgetsGrid.innerHTML = '';
 
   gadgets.forEach(gadget => {
@@ -296,7 +313,6 @@ function renderGadgets() {
           <p class="gadget-desc">${gadget.description}</p>
         </div>
         <a class="affiliate-btn" href="${gadget.url}" target="_blank" rel="noopener noreferrer">
-          <!-- Amazon風の買い物カゴアイコン -->
           <svg class="amazon-icon" fill="currentColor" viewBox="0 0 24 24" width="16" height="16"><path d="M17.2 12.3c-.6 0-1 .4-1 1s.4 1 1 1 1-.4 1-1-.4-1-1-1zm3.8-3.4c-.4-.4-1-.4-1.4 0l-1 1c-.4.4-.4 1 0 1.4.4.4 1 .4 1.4 0l1-1c.4-.4.4-1 0-1.4zm-13.8 0l-1 1c-.4.4-.4 1 0 1.4.4.4 1 .4 1.4 0l1-1c.4-.4.4-1 0-1.4-.4-.4-1-.4-1.4 0zm3.8 3.4c-.6 0-1 .4-1 1s.4 1 1 1 1-.4 1-1-.4-1-1-1zm1 5.9c-.3.3-.3.8 0 1.1l1 1c.3.3.8.3 1.1 0 .3-.3.3-.8 0-1.1l-1-1c-.3-.3-.8-.3-1.1 0zm7-1.1l-1 1c-.3.3-.3.8 0 1.1.3.3.8.3 1.1 0l1-1c.3-.3.3-.8 0-1.1-.3-.3-.8-.3-1.1 0zm-3-2.1c-.6 0-1 .4-1 1s.4 1 1 1 1-.4 1-1-.4-1-1-1zM12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm0-10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
           Amazonで詳細を見る
         </a>
