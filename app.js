@@ -47,7 +47,7 @@ async function init() {
   renderGadgets();
   
   // 初期表示として最もトレンドスコアの高いツールを選択状態にする
-  const initialTool = activeToolsData
+  const initialTool = [...activeToolsData]
     .sort((a, b) => b.trendScore - a.trendScore)[0];
   if (initialTool) {
     selectTool(initialTool.id);
@@ -300,7 +300,7 @@ function selectTool(id) {
   statScore.innerText = `${tool.trendScore}/100`;
 
   // 順位の算出
-  const sortedTools = activeToolsData
+  const sortedTools = [...activeToolsData]
     .sort((a, b) => b[key] - a[key]);
   const rank = sortedTools.findIndex(t => t.id === id) + 1;
   statRank.innerText = `#${rank}`;
