@@ -307,6 +307,21 @@ function selectTool(id) {
 
   // SVG折れ線グラフの描画
   renderSVGChart(tool.trendData);
+
+  // 外部リンク・アフィリエイトリンクボタンの更新
+  const detailLink = document.getElementById('detailLink');
+  if (tool.url) {
+    detailLink.href = tool.url;
+    detailLink.style.display = 'flex';
+    detailLink.innerHTML = tool.isAffiliate ? `
+      <svg class="amazon-icon" fill="currentColor" viewBox="0 0 24 24" width="14" height="14" style="margin-right: 0.25rem;"><path d="M17.2 12.3c-.6 0-1 .4-1 1s.4 1 1 1 1-.4 1-1-.4-1-1-1zm3.8-3.4c-.4-.4-1-.4-1.4 0l-1 1c-.4.4-.4 1 0 1.4.4.4 1 .4 1.4 0l1-1c.4-.4.4-1 0-1.4zm-13.8 0l-1 1c-.4.4-.4 1 0 1.4.4.4 1 .4 1.4 0l1-1c.4-.4.4-1 0-1.4-.4-.4-1-.4-1.4 0zm3.8 3.4c-.6 0-1 .4-1 1s.4 1 1 1 1-.4 1-1-.4-1-1-1zm1 5.9c-.3.3-.3.8 0 1.1l1 1c.3.3.8.3 1.1 0 .3-.3.3-.8 0-1.1l-1-1c-.3-.3-.8-.3-1.1 0zm7-1.1l-1 1c-.3.3-.3.8 0 1.1.3.3.8.3 1.1 0l1-1c.3-.3.3-.8 0-1.1-.3-.3-.8-.3-1.1 0zm-3-2.1c-.6 0-1 .4-1 1s.4 1 1 1 1-.4 1-1-.4-1-1-1zM12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm0-10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+      Amazonで詳細を見る
+    ` : `
+      公式サイトを見る ↗
+    `;
+  } else {
+    detailLink.style.display = 'none';
+  }
 }
 
 // --- SVG折れ線グラフの描画 ---
