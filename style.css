@@ -96,9 +96,10 @@ header {
 
 .tabs {
   display: flex;
-  gap: 0.25rem;
+  flex-wrap: wrap;
+  gap: 0.35rem;
   background-color: var(--border-light);
-  padding: 0.25rem;
+  padding: 0.35rem;
   border-radius: 8px;
 }
 
