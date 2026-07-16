@@ -109,6 +109,30 @@
       </div>
     </section>
 
+    <!-- 算出基準の説明セクション -->
+    <section class="methodology-section">
+      <h2 class="section-title">Scoring Methodology</h2>
+      <p class="section-subtitle">トレンドスコア（0〜99）およびタイルのサイズ決定に関する集計基準と算出ロジック</p>
+      
+      <div class="methodology-grid">
+        <div class="methodology-card">
+          <div class="card-num">01</div>
+          <h3>タイルの面積：言及・普及規模</h3>
+          <p>ツリーマップ上の各タイルの大きさは、過去30日間の「総言及規模（GitHubスター数、npm週間DL数、およびコミュニティでの言及総数）」に比例します。普及シェアの巨大な定番技術ほど面積が大きくなります。</p>
+        </div>
+        <div class="methodology-card">
+          <div class="card-num">02</div>
+          <h3>色の濃淡：トレンド注目度</h3>
+          <p>タイルの色の濃さは、直近の「話題の急上昇率」を示します。導入規模に対して直近7日間の言及割合（アクティビティ比）が急増している最新鋭ツールは濃く光り、動きが落ち着いている安定した技術は淡いグレーに沈みます。</p>
+        </div>
+        <div class="methodology-card">
+          <div class="card-num">03</div>
+          <h3>エッジAPIによる動的集計</h3>
+          <p>Cloudflareエッジサーバーから、GitHub API (リポジトリ規模)、Hacker News API (過去7日間の話題言及数)、npm Registry API (パッケージ実動DL数) をパラレルに動的集計。対数スケーリングを適用し、24時間ごとにキャッシュを自動更新します。</p>
+        </div>
+      </div>
+    </section>
+
     <!-- フッター -->
     <footer>
       <p>&copy; 2026 eTools Trend. All rights reserved.</p>

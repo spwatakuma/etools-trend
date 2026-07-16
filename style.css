@@ -502,3 +502,50 @@ footer {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
   white-space: nowrap;
 }
+
+/* --- 算出基準 (Methodology) セクション --- */
+.methodology-section {
+  border-top: 1px solid var(--border-light);
+  padding-top: 3.5rem;
+  margin-top: 4rem;
+}
+
+.methodology-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.methodology-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-medium);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.01);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.methodology-card .card-num {
+  font-family: var(--font-title);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent-blue);
+  opacity: 0.8;
+  margin-bottom: 0.5rem;
+}
+
+.methodology-card h3 {
+  font-family: var(--font-title);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+}
+
+.methodology-card p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
