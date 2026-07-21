@@ -3,11 +3,13 @@ import { categories, toolsData as baseToolsData } from './data.js';
 // --- アプリケーションの状態管理 (State) ---
 let currentCategory = 'all';
 let currentTimeFilter = '24h';
+let searchQuery = '';
 let selectedToolId = null;
 let activeToolsData = []; // APIから取得したアクティブなデータ
 
 // --- DOM要素の参照 ---
-const categoryTabs = document.getElementById('categoryTabs');
+const categorySelect = document.getElementById('categorySelect');
+const toolSearchInput = document.getElementById('toolSearchInput');
 const timeFilters = document.getElementById('timeFilters');
 const heatmapGrid = document.getElementById('heatmapGrid');
 const panelCategoryTitle = document.getElementById('panelCategoryTitle');
@@ -18,6 +20,9 @@ const detailName = document.getElementById('detailName');
 const detailCategory = document.getElementById('detailCategory');
 const detailDesc = document.getElementById('detailDesc');
 const trendChart = document.getElementById('trendChart');
+const trendMomentumBadge = document.getElementById('trendMomentumBadge');
+const chartContainer = document.getElementById('chartContainer');
+const chartHoverTooltip = document.getElementById('chartHoverTooltip');
 const statMentions = document.getElementById('statMentions');
 const statRank = document.getElementById('statRank');
 const statScore = document.getElementById('statScore');
@@ -37,7 +42,7 @@ async function init() {
       throw new Error('API response was not OK');
     }
   } catch (error) {
-    // APIが動作していない場合やローカル環境時は、事前に用意した最新のbaseToolsDataをフォールバック使用
+    // APIが動作していない場合やローカル環境時は、ベースデータをフォールバック使用
     console.warn('API fetch failed. Falling back to local data:', error);
     activeToolsData = baseToolsData;
   }
@@ -59,7 +64,7 @@ async function init() {
   }, 250));
 }
 
-// デバウンス関数 (リサイズイベントの間引き用)
+// デバウンス関数 (リサイズイベントや検索入力の間引き用)
 function debounce(func, wait) {
   let timeout;
   return function(...args) {
@@ -70,18 +75,19 @@ function debounce(func, wait) {
 
 // --- イベントリスナーの設定 ---
 function setupEventListeners() {
-  // カテゴリタブ切り替え
-  categoryTabs.addEventListener('click', (e) => {
-    const btn = e.target.closest('.tab-btn');
-    if (!btn) return;
-    
-    categoryTabs.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    
-    currentCategory = btn.dataset.category;
+  // カテゴリドロップダウン切り替え
+  categorySelect.addEventListener('change', (e) => {
+    currentCategory = e.target.value;
     renderHeatmap();
     renderGadgets(); // ガジェットアフィリエイト枠もカテゴリで絞り込む
   });
+
+  // ツール名検索フィルター
+  toolSearchInput.addEventListener('input', debounce((e) => {
+    searchQuery = e.target.value.trim().toLowerCase();
+    renderHeatmap();
+    renderGadgets();
+  }, 150));
 
   // 期間フィルター切り替え
   timeFilters.addEventListener('click', (e) => {
@@ -148,22 +154,33 @@ function layoutTreemap(items, x, y, width, height, vertical) {
   }
 }
 
-// --- ヒートマップセルの強度分類 (トレンドの色彩強度) ---
-function getIntensityClass(score) {
-  if (score >= 90) return 'intensity-4';
-  if (score >= 75) return 'intensity-3';
-  if (score >= 60) return 'intensity-2';
-  if (score >= 45) return 'intensity-1';
-  return 'intensity-0';
+// --- 赤緑モメンタム (前週比変化率%) によるカラー強度判定 ---
+function getMomentumIntensityClass(changePercent) {
+  const change = changePercent || 0;
+  if (change >= 15)  return 'intensity-up-4';   // 濃い緑
+  if (change >= 5)   return 'intensity-up-2';   // 緑
+  if (change >= 1)   return 'intensity-up-1';   // 薄い緑
+  if (change >= -1)  return 'intensity-neutral';// グレー
+  if (change >= -5)  return 'intensity-down-1'; // 薄い赤
+  if (change >= -15) return 'intensity-down-2'; // 赤
+  return 'intensity-down-4';                    // 濃い赤
 }
 
 // --- ヒートマップ (ツリーマップ) のレンダリング ---
 function renderHeatmap() {
-  // アフィリエイト商品（ガジェット、PCパーツ）もすべてツリーマップに統合して総括表示
   let filtered = [...activeToolsData];
   
+  // 1. カテゴリ絞り込み
   if (currentCategory !== 'all') {
     filtered = filtered.filter(tool => tool.category === currentCategory);
+  }
+
+  // 2. 検索キーワード絞り込み
+  if (searchQuery) {
+    filtered = filtered.filter(tool => 
+      tool.name.toLowerCase().includes(searchQuery) ||
+      (tool.description && tool.description.toLowerCase().includes(searchQuery))
+    );
   }
 
   const mentionsKey = getMentionsKey();
@@ -180,7 +197,7 @@ function renderHeatmap() {
   heatmapGrid.style.width = '100%';
 
   if (filtered.length === 0) {
-    heatmapGrid.innerHTML = '<p style="position: absolute; width:100%; top: 40%; text-align: center; color: var(--text-muted);">データがありません。</p>';
+    heatmapGrid.innerHTML = '<p style="position: absolute; width:100%; top: 40%; text-align: center; color: var(--text-muted);">該当するツールが見つかりません。</p>';
     return;
   }
 
@@ -188,7 +205,7 @@ function renderHeatmap() {
 
   filtered.forEach(tool => {
     const cell = document.createElement('div');
-    const intensity = getIntensityClass(tool.trendScore);
+    const intensity = getMomentumIntensityClass(tool.changePercent);
     cell.className = `heatmap-cell ${intensity}`;
     cell.dataset.id = tool.id;
     
@@ -201,17 +218,17 @@ function renderHeatmap() {
     cell.style.boxSizing = 'border-box';
     
     if (tool.id === selectedToolId) {
-      cell.style.outline = '2.5px solid var(--accent-blue)';
+      cell.style.outline = '2.5px solid #3b82f6';
       cell.style.outlineOffset = '-2.5px';
       cell.style.zIndex = '5';
     }
 
     const mentions = tool[mentionsKey].toLocaleString();
+    const changeText = tool.changePercent > 0 ? `+${tool.changePercent}%` : `${tool.changePercent}%`;
 
     const isSmall = tool.w < 12 || tool.h < 12;
     const isTiny = tool.w < 7 || tool.h < 7;
 
-    // アフィリエイト商品（ガジェット、PCパーツ）には名前の前に🛒マークを付与して視覚的に区別
     const prefix = tool.isAffiliate ? '🛒 ' : '';
 
     if (isTiny) {
@@ -225,7 +242,7 @@ function renderHeatmap() {
     } else {
       cell.innerHTML = `
         <span class="cell-name">${prefix}${tool.name}</span>
-        <span class="cell-score" style="font-size: 0.95rem;">${tool.trendScore}</span>
+        <span class="cell-score" style="font-size: 0.9rem;">${changeText}</span>
       `;
     }
 
@@ -236,7 +253,7 @@ function renderHeatmap() {
     cell.addEventListener('mouseenter', (e) => {
       tooltip.style.opacity = '1';
       const typeStr = tool.isAffiliate ? '（ガジェット・パーツ）' : '';
-      tooltip.innerHTML = `<strong>${tool.name} ${typeStr}</strong><br>期間中: ${mentions}言及 (${currentTimeFilter})<br>注目トレンド: ${tool.trendScore}点`;
+      tooltip.innerHTML = `<strong>${tool.name} ${typeStr}</strong><br>期間中: ${mentions}言及 (${currentTimeFilter})<br>前週比モメンタム: <strong>${changeText}</strong>`;
       positionTooltip(e);
     });
 
@@ -252,10 +269,10 @@ function renderHeatmap() {
   });
 
   // タイトルの更新
-  const catName = currentCategory === 'all' ? 'すべてのツール & ハードウェア' : categories[currentCategory];
+  const catName = currentCategory === 'all' ? 'すべてのITカテゴリ (500+)' : categories[currentCategory];
   panelCategoryTitle.innerHTML = `
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
-    ${catName}のツリーマップ動向 (サイズ＝言及規模 / 色＝トレンド)
+    ${catName} の勢いヒートマップ
   `;
 }
 
@@ -284,7 +301,7 @@ function selectTool(id) {
   document.querySelectorAll('.heatmap-cell').forEach(cell => {
     cell.style.outline = 'none';
     if (cell.dataset.id === id) {
-      cell.style.outline = '2.5px solid var(--accent-blue)';
+      cell.style.outline = '2.5px solid #3b82f6';
       cell.style.outlineOffset = '-2.5px';
       cell.style.zIndex = '5';
     }
@@ -292,7 +309,7 @@ function selectTool(id) {
 
   // テキストの更新
   detailName.innerText = tool.name;
-  detailCategory.innerText = categories[tool.category];
+  detailCategory.innerText = categories[tool.category] || tool.category;
   detailDesc.innerText = tool.description;
 
   const key = getMentionsKey();
@@ -305,8 +322,21 @@ function selectTool(id) {
   const rank = sortedTools.findIndex(t => t.id === id) + 1;
   statRank.innerText = `#${rank}`;
 
-  // SVG折れ線グラフの描画
-  renderSVGChart(tool.trendData);
+  // 前週比モメンタムバッジの描画
+  const change = tool.changePercent || 0;
+  if (change > 0) {
+    trendMomentumBadge.className = 'momentum-badge up';
+    trendMomentumBadge.innerText = `前週比 +${change}% 📈`;
+  } else if (change < 0) {
+    trendMomentumBadge.className = 'momentum-badge down';
+    trendMomentumBadge.innerText = `前週比 ${change}% 📉`;
+  } else {
+    trendMomentumBadge.className = 'momentum-badge neutral';
+    trendMomentumBadge.innerText = `前週比 0.0% ➖`;
+  }
+
+  // インタラクティブSVG折れ線グラフの描画
+  renderSVGChart(tool);
 
   // 外部リンク・アフィリエイトリンクボタンの更新
   const detailLink = document.getElementById('detailLink');
@@ -324,9 +354,10 @@ function selectTool(id) {
   }
 }
 
-// --- SVG折れ線グラフの描画 ---
-function renderSVGChart(data) {
-  const width = trendChart.clientWidth || 300;
+// --- インタラクティブSVG折れ線グラフの描画 ---
+function renderSVGChart(tool) {
+  const data = tool.trendData || [50, 52, 55, 53, 58, 60, 65, 68, tool.trendScore];
+  const width = trendChart.clientWidth || 320;
   const height = 160;
   const padding = 15;
   
@@ -336,15 +367,13 @@ function renderSVGChart(data) {
   const maxVal = Math.max(...data);
   const valRange = maxVal - minVal || 1;
 
-  // データ座標へのマッピング関数
   const getX = (idx) => padding + (idx / (data.length - 1)) * (width - padding * 2);
   const getY = (val) => height - padding - ((val - minVal) / valRange) * (height - padding * 2);
 
-  // パス（d属性）の組み立て
   let linePath = '';
   let areaPath = '';
 
-  data.forEach((val, idx) => {
+  const points = data.map((val, idx) => {
     const x = getX(idx);
     const y = getY(val);
     if (idx === 0) {
@@ -354,17 +383,23 @@ function renderSVGChart(data) {
       linePath += ` L ${x} ${y}`;
       areaPath += ` L ${x} ${y}`;
     }
+    // 日付ラベルの計算
+    const daysAgo = Math.round(30 - (idx / (data.length - 1)) * 30);
+    const dateLabel = daysAgo === 0 ? '最新' : `${daysAgo}日前`;
+    return { x, y, val, dateLabel };
   });
   
   areaPath += ` L ${getX(data.length - 1)} ${height - padding} Z`;
 
-  // グリッドガイド線と軸の生成
+  const change = tool.changePercent || 0;
+  const lineColorClass = change > 0 ? 'up' : change < 0 ? 'down' : '';
+  const areaColor = change > 0 ? '#10b981' : change < 0 ? '#ef4444' : '#3b82f6';
+
   let svgContent = `
-    <!-- グラデーション定義 -->
     <defs>
       <linearGradient id="chart-grad-${selectedToolId}" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="var(--accent-blue)" stop-opacity="0.15"/>
-        <stop offset="100%" stop-color="var(--accent-blue)" stop-opacity="0"/>
+        <stop offset="0%" stop-color="${areaColor}" stop-opacity="0.25"/>
+        <stop offset="100%" stop-color="${areaColor}" stop-opacity="0"/>
       </linearGradient>
     </defs>
     <!-- 背景ガイド線 -->
@@ -375,19 +410,17 @@ function renderSVGChart(data) {
     <!-- グラフ塗りつぶしエリア -->
     <path class="chart-area" d="${areaPath}" fill="url(#chart-grad-${selectedToolId})" />
     <!-- 折れ線 -->
-    <path class="chart-line" d="${linePath}" />
+    <path class="chart-line ${lineColorClass}" d="${linePath}" />
   `;
 
-  // データポイントの丸を描画
-  data.forEach((val, idx) => {
-    const x = getX(idx);
-    const y = getY(val);
+  // データポイントのインタラクティブ描画
+  points.forEach((p, idx) => {
     svgContent += `
-      <circle class="chart-dots" cx="${x}" cy="${y}" r="4" data-value="${val}"></circle>
+      <circle class="chart-dots" cx="${p.x}" cy="${p.y}" r="4" data-idx="${idx}" data-val="${p.val}" data-label="${p.dateLabel}"></circle>
     `;
   });
 
-  // 日付の簡易軸ラベル
+  // 日付の軸ラベル
   svgContent += `
     <text class="chart-text" x="${padding}" y="${height - 2}" text-anchor="start">30日前</text>
     <text class="chart-text" x="${width / 2}" y="${height - 2}" text-anchor="middle">15日前</text>
@@ -395,27 +428,47 @@ function renderSVGChart(data) {
   `;
 
   trendChart.innerHTML = svgContent;
+
+  // データポイントホバーで正確な数値ポップアップ
+  const dots = trendChart.querySelectorAll('.chart-dots');
+  dots.forEach(dot => {
+    dot.addEventListener('mouseenter', (e) => {
+      const idx = dot.dataset.idx;
+      const p = points[idx];
+      chartHoverTooltip.style.display = 'block';
+      chartHoverTooltip.style.left = `${(p.x / width) * 100}%`;
+      chartHoverTooltip.style.top = `${p.y - 10}px`;
+      chartHoverTooltip.innerHTML = `<strong>${p.dateLabel}</strong>: ${p.val} 言及/スコア`;
+    });
+
+    dot.addEventListener('mouseleave', () => {
+      chartHoverTooltip.style.display = 'none';
+    });
+  });
 }
 
 // --- ガジェット・ハードウェアアフィリエイトのレンダリング ---
 function renderGadgets() {
-  // アフィリエイト商品のみを抽出
   let gadgets = activeToolsData.filter(tool => tool.isAffiliate);
 
-  // カテゴリが選択されている場合は、そのカテゴリに属するガジェットのみを表示
   if (currentCategory !== 'all') {
     gadgets = gadgets.filter(g => g.category === currentCategory);
   }
 
-  // 表示エリアをクリア
+  if (searchQuery) {
+    gadgets = gadgets.filter(g => 
+      g.name.toLowerCase().includes(searchQuery) ||
+      (g.description && g.description.toLowerCase().includes(searchQuery))
+    );
+  }
+
   gadgetsGrid.innerHTML = '';
 
   if (gadgets.length === 0) {
-    gadgetsGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 2rem;">このカテゴリには紹介ガジェット・パーツがありません。</p>';
+    gadgetsGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 2rem;">条件に一致する紹介ガジェット・パーツがありません。</p>';
     return;
   }
 
-  // 最大8個程度表示 (表示しきれない場合はスライスなどしてもよいですが、ここでは全て美しく並べます)
   gadgets.forEach(gadget => {
     const card = document.createElement('article');
     card.className = 'gadget-card';

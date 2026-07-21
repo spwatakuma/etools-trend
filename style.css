@@ -5,7 +5,7 @@
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-title: 'Outfit', var(--font-sans);
   
-  /* カラーパレット (白基調・洗練されたグレイスケール＋淡いブルー) */
+  /* カラーパレット (白基調・洗練されたグレイスケール＋アクセントカラー) */
   --bg-main: #fcfcfd;
   --bg-card: #ffffff;
   --text-primary: #111827;
@@ -16,12 +16,12 @@
   --accent-blue: #3b82f6;
   --accent-light: #eff6ff;
   
-  /* トレンドヒートマップのカラー強度 (淡いインディゴブルー) */
-  --heat-0: #f3f4f6; /* 低 */
+  /* 旧単色ヒートマップ用予備カラー */
+  --heat-0: #f3f4f6;
   --heat-1: #e0e7ff;
   --heat-2: #c7d2fe;
   --heat-3: #818cf8;
-  --heat-4: #4f46e5; /* 高 */
+  --heat-4: #4f46e5;
 }
 
 /* --- ベースリセット --- */
@@ -84,7 +84,7 @@ header {
   text-align: right;
 }
 
-/* --- コントロールエリア (フィルター・タブ) --- */
+/* --- コントロールエリア (新UI: カテゴリドロップダウン & 検索入力) --- */
 .controls-section {
   display: flex;
   justify-content: space-between;
@@ -94,32 +94,79 @@ header {
   gap: 1rem;
 }
 
-.tabs {
+.category-filter-container {
   display: flex;
+  align-items: center;
+  gap: 0.75rem;
   flex-wrap: wrap;
-  gap: 0.35rem;
-  background-color: var(--border-light);
-  padding: 0.35rem;
-  border-radius: 8px;
+  flex-grow: 1;
 }
 
-.tab-btn {
-  background: none;
-  border: none;
+.filter-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.select-wrapper {
+  position: relative;
+  min-width: 280px;
+}
+
+.category-select {
+  width: 100%;
+  padding: 0.55rem 2.2rem 0.55rem 0.85rem;
   font-family: var(--font-sans);
   font-size: 0.85rem;
-  font-weight: 500;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-medium);
+  border-radius: 8px;
+  appearance: none;
   cursor: pointer;
-  color: var(--text-secondary);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-.tab-btn.active {
-  background-color: var(--bg-card);
+.select-wrapper::after {
+  content: '▼';
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  position: absolute;
+  right: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.category-select:hover, .category-select:focus {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.search-wrapper {
+  position: relative;
+  min-width: 220px;
+}
+
+.tool-search-input {
+  width: 100%;
+  padding: 0.55rem 0.85rem;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
   color: var(--text-primary);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-medium);
+  border-radius: 8px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.tool-search-input:focus {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 .time-filters {
@@ -173,16 +220,54 @@ header {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
 .panel-title {
   font-family: var(--font-title);
   font-size: 1.25rem;
   font-weight: 600;
-  margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   letter-spacing: -0.02em;
+  margin: 0;
 }
+
+/* 赤緑モメンタムの凡例 */
+.color-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.legend-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.legend-color.up-strong   { background-color: #059669; }
+.legend-color.up-mild     { background-color: #34d399; }
+.legend-color.neutral     { background-color: #6b7280; }
+.legend-color.down-mild   { background-color: #f87171; }
+.legend-color.down-strong { background-color: #dc2626; }
 
 .heatmap-grid {
   position: relative;
@@ -209,7 +294,7 @@ header {
 
 .heatmap-cell:hover {
   transform: scale(1.01);
-  box-shadow: inset 0 0 0 1.5px var(--accent-blue), 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: inset 0 0 0 1.5px var(--accent-blue), 0 4px 12px rgba(0, 0, 0, 0.12);
   z-index: 10 !important;
 }
 
@@ -221,18 +306,20 @@ header {
 }
 
 .cell-score {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-family: var(--font-title);
   font-weight: 700;
   text-align: right;
 }
 
-/* 各強度の背景・フォント色 */
-.intensity-0 { background-color: var(--heat-0); color: var(--text-secondary); }
-.intensity-1 { background-color: var(--heat-1); color: #3730a3; }
-.intensity-2 { background-color: var(--heat-2); color: #312e81; }
-.intensity-3 { background-color: var(--heat-3); color: #ffffff; }
-.intensity-4 { background-color: var(--heat-4); color: #ffffff; }
+/* === 赤緑モメンタム (前週比の勢い) カラー定義 === */
+.intensity-up-4   { background-color: #059669; color: #ffffff; } /* 急上昇 (+15%以上) */
+.intensity-up-2   { background-color: #10b981; color: #ffffff; } /* 上昇 (+5%〜+15%) */
+.intensity-up-1   { background-color: #34d399; color: #064e3b; } /* 微増 (+1%〜+5%) */
+.intensity-neutral{ background-color: #6b7280; color: #ffffff; } /* 横ばい (-1%〜+1%) */
+.intensity-down-1 { background-color: #f87171; color: #7f1d1d; } /* 微減 (-5%〜-1%) */
+.intensity-down-2 { background-color: #ef4444; color: #ffffff; } /* 下降 (-15%〜-5%) */
+.intensity-down-4 { background-color: #dc2626; color: #ffffff; } /* 急低下 (-15%以下) */
 
 /* --- トレンド詳細パネル --- */
 .details-panel {
@@ -248,45 +335,99 @@ header {
 }
 
 .details-header {
-  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .details-header h3 {
   font-family: var(--font-title);
-  font-size: 1.5rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
 }
 
-.details-header .tag {
-  display: inline-block;
-  font-size: 0.75rem;
+.tag {
   background-color: var(--border-light);
   color: var(--text-secondary);
-  padding: 0.15rem 0.5rem;
-  border-radius: 4px;
-  margin-top: 0.25rem;
-  font-weight: 500;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  white-space: nowrap;
 }
 
 .details-desc {
   font-size: 0.9rem;
   color: var(--text-secondary);
-  margin-bottom: 1.5rem;
-  min-height: 60px;
+  margin-bottom: 1rem;
 }
 
-/* 折れ線グラフ用SVG領域 */
+.affiliate-btn {
+  background-color: var(--text-primary);
+  color: #ffffff !important;
+  font-weight: 600;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.affiliate-btn:hover {
+  background-color: #1f2937;
+  transform: translateY(-1px);
+}
+
+/* トレンドグラフヘッダー & バッジ */
+.chart-header-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.chart-title {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0;
+  font-weight: 600;
+}
+
+.momentum-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+}
+
+.momentum-badge.up {
+  background-color: #d1fae5;
+  color: #047857;
+}
+
+.momentum-badge.down {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.momentum-badge.neutral {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+/* トレンド推移グラフ (インタラクティブSVG) */
 .chart-container {
-  width: 100%;
-  height: 160px;
-  margin: 1rem 0;
   position: relative;
+  width: 100%;
+  margin-bottom: 1.5rem;
 }
 
 .chart-svg {
   width: 100%;
-  height: 100%;
+  height: 160px;
   overflow: visible;
 }
 
@@ -296,11 +437,15 @@ header {
   stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
+  transition: stroke 0.3s;
 }
 
-.chart-area {
-  fill: url(#chart-grad);
-  opacity: 0.08;
+.chart-line.up {
+  stroke: #10b981;
+}
+
+.chart-line.down {
+  stroke: #ef4444;
 }
 
 .chart-dots {
@@ -308,34 +453,56 @@ header {
   stroke: var(--accent-blue);
   stroke-width: 2;
   cursor: pointer;
+  transition: r 0.2s, fill 0.2s;
 }
 
 .chart-dots:hover {
+  r: 6;
   fill: var(--accent-blue);
-  r: 5px;
 }
 
 .chart-axis {
   stroke: var(--border-medium);
-  stroke-dasharray: 4,4;
   stroke-width: 1;
+  stroke-dasharray: 4, 4;
 }
 
 .chart-text {
-  font-size: 10px;
+  font-size: 0.7rem;
   fill: var(--text-muted);
   font-family: var(--font-sans);
 }
 
+.chart-hover-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background-color: #111827;
+  color: #ffffff;
+  padding: 0.4rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translate(-50%, -120%);
+  white-space: nowrap;
+  z-index: 20;
+  transition: opacity 0.1s ease;
+  display: none;
+}
+
+/* スタッツグリッド */
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+  gap: 0.75rem;
   border-top: 1px solid var(--border-light);
-  padding-top: 1.5rem;
+  padding-top: 1.25rem;
 }
 
 .stat-box {
+  background-color: var(--bg-main);
+  padding: 0.75rem;
+  border-radius: 8px;
   text-align: center;
 }
 
@@ -346,35 +513,36 @@ header {
 }
 
 .stat-val {
-  font-size: 1.1rem;
   font-family: var(--font-title);
+  font-size: 1.2rem;
   font-weight: 700;
+  color: var(--text-primary);
 }
 
-/* --- アフィリエイト枠 (ガジェット紹介) --- */
+/* --- ガジェットアフィリエイトセクション --- */
 .gadgets-section {
-  border-top: 1px solid var(--border-light);
-  padding-top: 3.5rem;
+  margin-bottom: 3.5rem;
 }
 
 .section-title {
   font-family: var(--font-title);
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
   letter-spacing: -0.03em;
 }
 
 .section-subtitle {
+  font-size: 0.9rem;
   color: var(--text-secondary);
-  font-size: 0.95rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.75rem;
 }
 
 .gadgets-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.25rem;
 }
 
 .gadget-card {
@@ -390,7 +558,7 @@ header {
 
 .gadget-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
 }
 
 .gadget-image-container {
@@ -436,55 +604,75 @@ header {
 }
 
 .gadget-name {
-  font-family: var(--font-title);
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  letter-spacing: -0.01em;
-  color: var(--text-primary);
+  line-height: 1.3;
 }
 
 .gadget-price {
   font-family: var(--font-title);
-  font-size: 1rem;
   font-weight: 700;
-  color: var(--accent-blue);
+  font-size: 0.9rem;
+  color: var(--text-primary);
   white-space: nowrap;
 }
 
 .gadget-desc {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
   margin-bottom: 1.25rem;
-  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.affiliate-btn {
-  background-color: var(--text-primary);
-  color: var(--bg-card);
-  text-align: center;
-  padding: 0.65rem;
-  border-radius: 6px;
-  font-size: 0.85rem;
+/* --- 算出基準 (Methodology) セクション --- */
+.methodology-section {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-medium);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 3.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.methodology-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.methodology-card {
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.card-num {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--accent-blue);
+  margin-bottom: 0.5rem;
+}
+
+.methodology-card h3 {
+  font-size: 0.95rem;
   font-weight: 600;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
-  transition: background-color 0.2s;
+  margin-bottom: 0.5rem;
 }
 
-.affiliate-btn:hover {
-  background-color: var(--accent-blue);
-}
-
-.amazon-icon {
-  width: 16px;
-  height: 16px;
+.methodology-card p {
+  font-size: 0.825rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
 }
 
 /* --- フッター --- */
 footer {
-  margin-top: 5rem;
   text-align: center;
   font-size: 0.8rem;
   color: var(--text-muted);
@@ -495,62 +683,15 @@ footer {
 /* --- ツールチップ --- */
 .tooltip {
   position: absolute;
-  background-color: var(--text-primary);
-  color: var(--bg-card);
-  padding: 0.4rem 0.6rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
   pointer-events: none;
+  background-color: #111827;
+  color: #ffffff;
+  padding: 0.5rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   opacity: 0;
   transition: opacity 0.15s ease;
   z-index: 100;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-  white-space: nowrap;
-}
-
-/* --- 算出基準 (Methodology) セクション --- */
-.methodology-section {
-  border-top: 1px solid var(--border-light);
-  padding-top: 3.5rem;
-  margin-top: 4rem;
-}
-
-.methodology-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-}
-
-.methodology-card {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-medium);
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.01);
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-
-.methodology-card .card-num {
-  font-family: var(--font-title);
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--accent-blue);
-  opacity: 0.8;
-  margin-bottom: 0.5rem;
-}
-
-.methodology-card h3 {
-  font-family: var(--font-title);
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
-  color: var(--text-primary);
-}
-
-.methodology-card p {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  line-height: 1.6;
+  line-height: 1.4;
 }

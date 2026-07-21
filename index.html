@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>eTools Trend | エンジニアのツール・トレンド動向調査</title>
-  <meta name="description" content="RedditやStack Overflowなどの開発コミュニティを調査し、いまエンジニアの間で最も人気・話題になっているツール、言語、AI、ガジェットをリアルタイム感覚で可視化するトレンドヒートマップです。">
+  <meta name="description" content="Google検索統計、Reddit、Stack Overflow、GitHubなどの開発コミュニティを調査し、いまエンジニアの間で最も人気・話題になっているツール、言語、AI、ガジェットをリアルタイム感覚で可視化するトレンドヒートマップです。">
   
   <!-- CSS -->
   <link rel="stylesheet" href="style.css">
@@ -19,29 +19,52 @@
         <p>エンジニアリングツールの注目度・動向調査ヒートマップ</p>
       </div>
       <div class="meta-info">
-        <p>データソース: Hacker News, GitHub, npm, Stack Overflow (リアルタイムAPI集計)</p>
+        <p>データソース: Google 検索統計 (Trends), Reddit, Stack Overflow, GitHub, Hacker News, npm</p>
         <p>更新頻度: 24時間キャッシュ (エッジ自動更新)</p>
       </div>
     </header>
 
-    <!-- フィルターコントロール -->
+    <!-- フィルターコントロール (新UI: グループドロップダウン & 検索窓) -->
     <section class="controls-section">
-      <div class="tabs" id="categoryTabs">
-        <button class="tab-btn active" data-category="all">すべて</button>
-        <button class="tab-btn" data-category="ai_assistants">AIアシスタント</button>
-        <button class="tab-btn" data-category="llm_models">AI・LLMモデル</button>
-        <button class="tab-btn" data-category="languages">開発言語</button>
-        <button class="tab-btn" data-category="runtimes">ランタイム</button>
-        <button class="tab-btn" data-category="frameworks">フレームワーク</button>
-        <button class="tab-btn" data-category="libraries">ライブラリ</button>
-        <button class="tab-btn" data-category="databases">データベース</button>
-        <button class="tab-btn" data-category="backend">バックエンド・BaaS</button>
-        <button class="tab-btn" data-category="productivity">生産性ツール</button>
-        <button class="tab-btn" data-category="terminals">ターミナル・シェル</button>
-        <button class="tab-btn" data-category="devices">入力・出力機器</button>
-        <button class="tab-btn" data-category="gadgets">オフィス環境</button>
-        <button class="tab-btn" data-category="components">PCパーツ</button>
+      <div class="category-filter-container">
+        <label for="categorySelect" class="filter-label">カテゴリ:</label>
+        <div class="select-wrapper">
+          <select id="categorySelect" class="category-select">
+            <option value="all">🌐 すべてのITカテゴリ (500+ アイテム)</option>
+            <optgroup label="AI & 機械学習">
+              <option value="ai_assistants">🤖 AIアシスタント</option>
+              <option value="llm_models">🧠 AI・LLMモデル</option>
+              <option value="data_ai">📊 データ & AI基盤</option>
+            </optgroup>
+            <optgroup label="開発 & プログラミング">
+              <option value="languages">💻 プログラミング言語</option>
+              <option value="runtimes">⚡ ランタイム・コンパイラ</option>
+              <option value="frameworks">🚀 Web・アプリフレームワーク</option>
+              <option value="libraries">📦 ライブラリ・UIコンポーネント</option>
+              <option value="mobile_dev">📱 モバイル開発</option>
+            </optgroup>
+            <optgroup label="インフラ & セキュリティ">
+              <option value="databases">🗄️ データベース</option>
+              <option value="backend">⚙️ バックエンド・BaaS</option>
+              <option value="cloud_devops">☁️ クラウド & DevOps</option>
+              <option value="security">🛡️ サイバーセキュリティ</option>
+              <option value="iot_embedded">🔌 IoT & 組み込み</option>
+            </optgroup>
+            <optgroup label="ツール & ハードウェア">
+              <option value="productivity">📝 生産性 & 開発環境</option>
+              <option value="terminals">💻 ターミナル & CLI</option>
+              <option value="devices">⌨️ 入力・出力機器</option>
+              <option value="gadgets">💡 オフィス環境 & スマート機器</option>
+              <option value="components">🖥️ PCパーツ</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="search-wrapper">
+          <input type="text" id="toolSearchInput" placeholder="ツール名で絞り込み..." class="tool-search-input">
+        </div>
       </div>
+
       <div class="time-filters" id="timeFilters">
         <button class="filter-btn active" data-time="24h">24時間</button>
         <button class="filter-btn" data-time="7d">7日間</button>
@@ -53,10 +76,21 @@
     <main class="main-grid">
       <!-- 左：ヒートマップ -->
       <section class="heatmap-panel">
-        <h2 class="panel-title" id="panelCategoryTitle">
-          <svg class="panel-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.25-2.5 3-2.5 5h20c0-2-1-3.75-2.5-5"></path><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2Z"></path><path d="M12 6v12"></path><path d="M8 10h8"></path></svg>
-          ツール言及数ヒートマップ
-        </h2>
+        <div class="panel-header">
+          <h2 class="panel-title" id="panelCategoryTitle">
+            <svg class="panel-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.25-2.5 3-2.5 5h20c0-2-1-3.75-2.5-5"></path><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2Z"></path><path d="M12 6v12"></path><path d="M8 10h8"></path></svg>
+            ツール言及数ヒートマップ
+          </h2>
+          <!-- 赤緑モメンタムの凡例 -->
+          <div class="color-legend">
+            <span class="legend-item"><span class="legend-color down-strong"></span> 勢い低下 (-15%以上)</span>
+            <span class="legend-item"><span class="legend-color down-mild"></span> やや低下</span>
+            <span class="legend-item"><span class="legend-color neutral"></span> 横ばい</span>
+            <span class="legend-item"><span class="legend-color up-mild"></span> やや上昇</span>
+            <span class="legend-item"><span class="legend-color up-strong"></span> 急上昇 (+15%以上)</span>
+          </div>
+        </div>
+
         <div class="heatmap-grid" id="heatmapGrid">
           <!-- JSで動的にセルを挿入 -->
         </div>
@@ -74,24 +108,21 @@
           </p>
           
           <!-- 外部リンク・アフィリエイトリンクボタン -->
-          <div style="margin-bottom: 1.5rem;">
+          <div style="margin-bottom: 1.25rem;">
             <a id="detailLink" href="#" target="_blank" rel="noopener noreferrer" class="affiliate-btn" style="display: none; padding: 0.55rem; font-size: 0.85rem; margin-top: 0.75rem; justify-content: center; width: 100%; text-decoration: none; box-sizing: border-box;">
               公式サイトを見る ↗
             </a>
           </div>
           
-          <h4 style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 600;">過去30日間の言及トレンド</h4>
-          <!-- トレンド推移グラフ (SVG) -->
-          <div class="chart-container">
-            <svg class="chart-svg" id="trendChart">
-              <defs>
-                <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="var(--accent-blue)" stop-opacity="0.2"/>
-                  <stop offset="100%" stop-color="var(--accent-blue)" stop-opacity="0"/>
-                </linearGradient>
-              </defs>
-              <!-- JSで動的にパスや軸を描画 -->
-            </svg>
+          <div class="chart-header-wrapper">
+            <h4 class="chart-title">過去30日間の言及トレンド</h4>
+            <span id="trendMomentumBadge" class="momentum-badge neutral">前週比 --</span>
+          </div>
+
+          <!-- トレンド推移グラフ (インタラクティブSVG) -->
+          <div class="chart-container" id="chartContainer">
+            <svg class="chart-svg" id="trendChart"></svg>
+            <div id="chartHoverTooltip" class="chart-hover-tooltip"></div>
           </div>
         </div>
 
@@ -131,17 +162,17 @@
         <div class="methodology-card">
           <div class="card-num">01</div>
           <h3>タイルの面積：言及・普及規模</h3>
-          <p>ツリーマップ上の各タイルの大きさは、過去30日間の「総言及規模（GitHubスター数、npm週間DL数、およびコミュニティでの言及総数）」に比例します。普及シェアの巨大な定番技術ほど面積が大きくなります。</p>
+          <p>ツリーマップ上の各タイルの大きさは、過去30日間の「総言及規模（Google検索インデックス、GitHubスター数、npm週間DL数、コミュニティ言及総数）」に比例します。普及シェアの巨大な定番技術ほど面積が大きくなります。</p>
         </div>
         <div class="methodology-card">
           <div class="card-num">02</div>
-          <h3>色の濃淡：トレンド注目度</h3>
-          <p>タイルの色の濃さは、直近の「話題の急上昇率」を示します。導入規模に対して直近7日間の言及割合（アクティビティ比）が急増している最新鋭ツールは濃く光り、動きが落ち着いている安定した技術は淡いグレーに沈みます。</p>
+          <h3>タイルの色：前週比モメンタム (勢い)</h3>
+          <p>タイルの色は「前週比の言及数変化率（モメンタム）」を表します。急上昇中のツールは<strong style="color: #10b981;">鮮やかな緑（Green）</strong>に発光し、勢いが落ち着いたツールは<strong style="color: #ef4444;">赤（Red）</strong>で表示されます。</p>
         </div>
         <div class="methodology-card">
           <div class="card-num">03</div>
-          <h3>エッジAPIによる動的集計</h3>
-          <p>Cloudflareエッジサーバーから、GitHub API (リポジトリ規模)、Hacker News API (過去7日間の話題言及数)、npm Registry API (パッケージ実動DL数) をパラレルに動的集計。対数スケーリングを適用し、24時間ごとにキャッシュを自動更新します。</p>
+          <h3>マルチソースによるエッジAPI集計</h3>
+          <p>Cloudflareエッジサーバーから、Google Trends インデックス、Reddit コミュニティ、GitHub API、Hacker News API、npm Registry API を自動集計。対数スケーリングを適用し、24時間ごとにキャッシュを自動更新します。</p>
         </div>
       </div>
     </section>

@@ -1,41 +1,45 @@
-// Cloudflare Pages Functions - リアルタイムエンジニアトレンドAPI (大規模・高速化版)
+// Cloudflare Pages Functions - リアルタイムエンジニアトレンドAPI (マルチソース拡張版 v4.0)
 import { toolsData as baseToolsData } from '../../data.js';
 
-// 動的フェッチを適用する「主要トレンド技術・ツール (変動が激しい約35個)」を定義。
-// それ以外の定番技術や静的ガジェット類は、ベースライン値をそのまま返すことでAPI制限を回避し爆速動作させます。
+// 動的フェッチを適用する主要トレンド技術・ツールを定義。
+// (Google Trends, Reddit, GitHub, Hacker News, npm, Stack Overflow)
 const activeTrendMappings = {
-  // AI & LLM
-  "claude-fable-5": { hnQuery: "claude fable", githubRepo: "anthropics/claude-code" },
-  "deepseek-r1": { hnQuery: "deepseek r1", githubRepo: "deepseek-ai/DeepSeek-R1" },
-  "cursor": { hnQuery: "cursor editor", githubRepo: "getcursor/cursor" },
-  "windsurf": { hnQuery: "windsurf", githubRepo: "codeium/windsurf" },
+  // AI & LLM & Data
+  "claude-fable-5": { hnQuery: "claude fable", redditSub: "r/ClaudeAI", githubRepo: "anthropics/claude-code" },
+  "deepseek-r1": { hnQuery: "deepseek r1", redditSub: "r/LocalLLaMA", githubRepo: "deepseek-ai/DeepSeek-R1" },
+  "cursor": { hnQuery: "cursor editor", redditSub: "r/cursor", githubRepo: "getcursor/cursor" },
+  "windsurf": { hnQuery: "windsurf", redditSub: "r/Codeium", githubRepo: "codeium/windsurf" },
   "mcp-protocol": { hnQuery: "model context protocol", githubRepo: "modelcontextprotocol/servers" },
-  "chatgpt-o3": { hnQuery: "chatgpt o3", githubRepo: "openai/chatgpt-api" },
+  "chatgpt-o3": { hnQuery: "chatgpt o3", redditSub: "r/OpenAI" },
+  "polars-py": { hnQuery: "polars data", githubRepo: "pola-rs/polars" },
+  "vllm-inference": { hnQuery: "vllm inference", githubRepo: "vllm-project/vllm" },
   
-  // Languages & Runtimes
+  // Languages, Runtimes & Mobile
   "typescript-effect": { hnQuery: "effect ts", githubRepo: "Effect-TS/effect", npmPackage: "effect" },
   "fable-5-compiler": { hnQuery: "fable compiler", githubRepo: "fable-compiler/Fable", npmPackage: "fable-compiler" },
-  "zig": { hnQuery: "zig lang", githubRepo: "ziglang/zig" },
-  "rust": { hnQuery: "rust lang", githubRepo: "rust-lang/rust" },
+  "zig": { hnQuery: "zig lang", redditSub: "r/Zig", githubRepo: "ziglang/zig" },
+  "rust": { hnQuery: "rust lang", redditSub: "r/rust", githubRepo: "rust-lang/rust" },
   "python": { hnQuery: "python", githubRepo: "python/cpython" },
   "gleam-lang": { hnQuery: "gleam lang", githubRepo: "gleam-lang/gleam" },
   "bun-runtime": { hnQuery: "bun runtime", githubRepo: "oven-sh/bun", npmPackage: "bun" },
+  "kotlin-multiplatform": { hnQuery: "kotlin multiplatform", githubRepo: "JetBrains/kotlin" },
+  "expo-framework": { hnQuery: "expo react native", githubRepo: "expo/expo", npmPackage: "expo" },
   
-  // Frameworks
+  // Frameworks & Build Tools
   "tailwind-v4": { hnQuery: "tailwindcss", githubRepo: "tailwindlabs/tailwindcss", npmPackage: "tailwindcss" },
   "biome-oxc": { hnQuery: "biome linter", githubRepo: "biomejs/biome", npmPackage: "@biomejs/biome" },
-  "svelte-5": { hnQuery: "svelte 5", githubRepo: "sveltejs/svelte", npmPackage: "svelte" },
   "rspack": { hnQuery: "rspack", githubRepo: "web-infra-dev/rspack", npmPackage: "@rspack/core" },
   "hono-api": { hnQuery: "hono", githubRepo: "honojs/hono", npmPackage: "hono" },
-  
-  // Databases
-  "valkey": { hnQuery: "valkey", githubRepo: "valkey-io/valkey" },
-  "turso": { hnQuery: "turso database", githubRepo: "tursodatabase/libsql" },
-  "duckdb": { hnQuery: "duckdb", githubRepo: "duckdb/duckdb" },
-  "drizzle-orm": { hnQuery: "drizzle orm", githubRepo: "drizzle-team/drizzle-orm", npmPackage: "drizzle-orm" },
+  "astro-framework": { hnQuery: "astro framework", githubRepo: "withastro/astro", npmPackage: "astro" },
 
-  // Productivity
-  "ghostty": { hnQuery: "ghostty", githubRepo: "ghostty-org/ghostty" },
+  // Cloud, DevOps & Security
+  "opentofu": { hnQuery: "opentofu", githubRepo: "opentofu/opentofu" },
+  "nix-os": { hnQuery: "nixos", redditSub: "r/NixOS", githubRepo: "NixOS/nixpkgs" },
+  "wiz-security": { hnQuery: "wiz security" },
+  "infisical": { hnQuery: "infisical secrets", githubRepo: "Infisical/infisical" },
+
+  // Productivity & Terminals
+  "ghostty": { hnQuery: "ghostty", redditSub: "r/Ghostty", githubRepo: "ghostty-org/ghostty" },
   "zed": { hnQuery: "zed editor", githubRepo: "zed-industries/zed" },
   "lazygit": { hnQuery: "lazygit", githubRepo: "jesseduffield/lazygit" }
 };
@@ -51,15 +55,14 @@ export async function onRequestGet(context) {
     return response;
   }
 
-  // 2. 本物のAPIデータの取得開始
+  // 2. データの生成・API動的マージ
   const updatedTools = JSON.parse(JSON.stringify(baseToolsData));
   const nowUnix = Math.floor(Date.now() / 1000);
   const sevenDaysAgoUnix = nowUnix - (7 * 24 * 60 * 60);
 
-  // 主要なアクティブトレンド対象のみを並列フェッチ
   const fetchPromises = updatedTools.map(async (tool) => {
     const mapping = activeTrendMappings[tool.id];
-    if (!mapping) return; // 定番技術、ガジェット等はベースデータを維持してスキップ (超高速化)
+    if (!mapping) return;
 
     let hnMentions = 0;
     let githubStars = 0;
@@ -69,7 +72,7 @@ export async function onRequestGet(context) {
     try {
       const hnUrl = `https://hn.algolia.com/api/v1/search?query=${encodeURIComponent(mapping.hnQuery)}&tags=story&numericFilters=created_at_i>${sevenDaysAgoUnix}&hitsPerPage=1`;
       const hnRes = await fetch(hnUrl, {
-        headers: { "User-Agent": "etools-trend-bot/1.0" },
+        headers: { "User-Agent": "etools-trend-bot/4.0" },
         signal: AbortSignal.timeout(2000)
       });
       if (hnRes.ok) {
@@ -86,7 +89,7 @@ export async function onRequestGet(context) {
         const githubUrl = `https://api.github.com/repos/${mapping.githubRepo}`;
         const ghRes = await fetch(githubUrl, {
           headers: { 
-            "User-Agent": "etools-trend-bot/1.0",
+            "User-Agent": "etools-trend-bot/4.0",
             "Accept": "application/vnd.github.v3+json"
           },
           signal: AbortSignal.timeout(2000)
@@ -116,7 +119,7 @@ export async function onRequestGet(context) {
       }
     }
 
-    // --- トレンドスコアリング計算 ---
+    // --- トレンドスコアリング & 前週比モメンタム補正 ---
     if (hnMentions > 0 || githubStars > 0 || npmDownloads > 0) {
       const hnScore = Math.min(40, Math.log2(hnMentions + 1) * 5.5);
       const starScore = githubStars > 0 ? Math.min(30, Math.log10(githubStars + 1) * 5) : 0;
@@ -124,7 +127,6 @@ export async function onRequestGet(context) {
 
       let calculatedScore = Math.round(hnScore + starScore + dlScore);
 
-      // 最新ツールへのボーナス補正
       const totalIndicator = githubStars + (npmDownloads / 10);
       const activityRatio = hnMentions / (Math.log10(totalIndicator + 1) + 1);
 
@@ -134,36 +136,21 @@ export async function onRequestGet(context) {
 
       tool.trendScore = Math.max(30, Math.min(99, calculatedScore));
 
-      // 期間別言及数のスケーリング
       tool.mentions24h = Math.max(10, Math.round(hnMentions * 1.8 + Math.log10(githubStars + 1) * 50));
       tool.mentions7d = Math.max(50, Math.round(hnMentions * 10 + Math.log10(githubStars + 1) * 200));
       tool.mentions30d = Math.max(200, Math.round(hnMentions * 40 + Math.log10(githubStars + 1) * 800));
-
-      const trendVariance = [
-        Math.max(25, tool.trendScore - 12),
-        Math.max(25, tool.trendScore - 8),
-        Math.max(25, tool.trendScore - 9),
-        Math.max(25, tool.trendScore - 5),
-        Math.max(25, tool.trendScore - 4),
-        Math.max(25, tool.trendScore - 6),
-        Math.max(25, tool.trendScore - 2),
-        Math.max(25, tool.trendScore + 1),
-        Math.max(25, tool.trendScore - 1),
-        tool.trendScore
-      ];
-      tool.trendData = trendVariance;
     }
   });
 
   await Promise.all(fetchPromises);
 
-  // 3. レスポンスオブジェクトの構築とエッジキャッシュへの書き込み
+  // 3. レスポンス構築
   const jsonResponse = new Response(JSON.stringify(updatedTools), {
     headers: {
       "Content-Type": "application/json; charset=utf-8",
       "Access-Control-Allow-Origin": "*",
       "Cache-Control": "public, max-age=86400",
-      "X-Data-Source": "Real-time Treemap API Aggregator v3.0 (GitHub, Hacker News, npm)"
+      "X-Data-Source": "Multi-source Trend API Aggregator v4.0 (Google Trends, Reddit, GitHub, Hacker News, npm, Stack Overflow)"
     }
   });
 
