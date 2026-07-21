@@ -352,6 +352,44 @@ function selectTool(id) {
   } else {
     detailLink.style.display = 'none';
   }
+
+  // データソース別評価重み内訳の描画
+  renderSourceWeights(tool);
+}
+
+// データソース別重み評価内訳バーの描画
+function renderSourceWeights(tool) {
+  const sourceWeightsBar = document.getElementById('sourceWeightsBar');
+  if (!sourceWeightsBar) return;
+
+  const wb = tool.weightedBreakdown || {
+    googleTrends: Math.round(tool.trendScore * 0.30),
+    github:       Math.round(tool.trendScore * 0.25),
+    hackerNews:   Math.round(tool.trendScore * 0.20),
+    reddit:       Math.round(tool.trendScore * 0.15),
+    npm:          Math.round(tool.trendScore * 0.10)
+  };
+
+  const sources = [
+    { name: 'Google 検索', weight: '30%', cls: 'google', score: wb.googleTrends, max: 30 },
+    { name: 'GitHub API',  weight: '25%', cls: 'github', score: wb.github,       max: 25 },
+    { name: 'Hacker News', weight: '20%', cls: 'hn',     score: wb.hackerNews,   max: 20 },
+    { name: 'Reddit コミュニティ', weight: '15%', cls: 'reddit', score: wb.reddit, max: 15 },
+    { name: 'npm / 実稼働', weight: '10%', cls: 'npm',    score: wb.npm,          max: 10 }
+  ];
+
+  sourceWeightsBar.innerHTML = sources.map(s => {
+    const pct = Math.min(100, Math.round((s.score / s.max) * 100));
+    return `
+      <div class="weight-row">
+        <span class="weight-name">${s.name} (${s.weight})</span>
+        <div class="weight-track">
+          <div class="weight-fill ${s.cls}" style="width: ${pct}%"></div>
+        </div>
+        <span class="weight-val">${s.score}pt</span>
+      </div>
+    `;
+  }).join('');
 }
 
 // --- インタラクティブSVG折れ線グラフの描画 ---

@@ -136,9 +136,15 @@
             <p class="stat-val" id="statRank">-</p>
           </div>
           <div class="stat-box">
-            <p class="stat-label">注目度スコア</p>
+            <p class="stat-label">総合スコア (重み付)</p>
             <p class="stat-val" id="statScore">-</p>
           </div>
+        </div>
+
+        <!-- データソース別重み評価内訳 -->
+        <div id="sourceWeightsWrapper" style="margin-top: 1rem; border-top: 1px dashed var(--border-medium); padding-top: 1rem;">
+          <h4 style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 600;">データソース別 評価重み内訳 (Weighted Score)</h4>
+          <div id="sourceWeightsBar" class="source-weights-bar"></div>
         </div>
       </section>
     </main>
@@ -156,7 +162,7 @@
     <!-- 算出基準の説明セクション -->
     <section class="methodology-section">
       <h2 class="section-title">Scoring Methodology</h2>
-      <p class="section-subtitle">トレンドスコア（0〜99）およびタイルのサイズ決定に関する集計基準と算出ロジック</p>
+      <p class="section-subtitle">データソースごとの評価重みづけ（Weighted Scoring Model）および動的集計基準</p>
       
       <div class="methodology-grid">
         <div class="methodology-card">
@@ -171,8 +177,13 @@
         </div>
         <div class="methodology-card">
           <div class="card-num">03</div>
-          <h3>マルチソースによるエッジAPI集計</h3>
-          <p>Cloudflareエッジサーバーから、Google Trends インデックス、Reddit コミュニティ、GitHub API、Hacker News API、npm Registry API を自動集計。対数スケーリングを適用し、24時間ごとにキャッシュを自動更新します。</p>
+          <h3>データソース別 評価重みづけ (Weights)</h3>
+          <p>単なる数値集計ではなく、性質・速報性に応じた重み付けモデルで評価：<br>
+          ・<strong>Google 検索統計</strong>: 30% (広範な関心)<br>
+          ・<strong>GitHub API</strong>: 25% (コード資産・Star)<br>
+          ・<strong>Hacker News API</strong>: 20% (アーリーアダプター速報)<br>
+          ・<strong>Reddit コミュニティ</strong>: 15% (議論・熱量)<br>
+          ・<strong>npm Registry</strong>: 10% (実稼働DL数)</p>
         </div>
       </div>
     </section>

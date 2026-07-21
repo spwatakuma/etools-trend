@@ -695,3 +695,52 @@ footer {
   z-index: 100;
   line-height: 1.4;
 }
+
+/* --- データソース別重み評価内訳スタイル --- */
+.source-weights-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.weight-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+}
+
+.weight-name {
+  width: 95px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.weight-track {
+  flex-grow: 1;
+  height: 6px;
+  background-color: var(--border-light);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.weight-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.weight-fill.google { background-color: #3b82f6; }
+.weight-fill.github { background-color: #10b981; }
+.weight-fill.hn     { background-color: #f59e0b; }
+.weight-fill.reddit { background-color: #ef4444; }
+.weight-fill.npm    { background-color: #8b5cf6; }
+
+.weight-val {
+  width: 30px;
+  text-align: right;
+  font-family: var(--font-title);
+  font-weight: 600;
+  color: var(--text-primary);
+}

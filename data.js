@@ -22,6 +22,15 @@ export const categories = {
 
 const tag = "stackhub-22";
 
+// データソースごとの評価重みづけ (Weighted Scoring Model)
+export const sourceWeights = {
+  googleTrends: 0.30, // 30%: Google 検索統計 (開発者の関心・検索需要)
+  github:       0.25, // 25%: GitHub API (コード規模・Star・実用資産)
+  hackerNews:   0.20, // 20%: Hacker News API (アーリーアダプター・先進速報性)
+  reddit:       0.15, // 15%: Reddit コミュニティ (議論の熱量・口コミ)
+  npm:          0.10  // 10%: パッケージ・実動ライブラリ (実環境DL数)
+};
+
 // 500個のデータを効率的に定義・保持するヘルパー関数
 function c(id, name, cat, score, changePercent, baseMentions, desc, isAff = false, price = "", url = "", img = "") {
   // changePercent (前週比変化率%) に応じた9段階の過去30日間トレンド推移データを自動計算
@@ -32,9 +41,19 @@ function c(id, name, cat, score, changePercent, baseMentions, desc, isAff = fals
     return Math.max(10, Math.min(99, rawVal));
   });
 
+  // データソース別重み評価の内訳 (Weighted Breakdown)
+  const weightedBreakdown = {
+    googleTrends: Math.round(score * 0.30),
+    github:       Math.round(score * 0.25),
+    hackerNews:   Math.round(score * 0.20),
+    reddit:       Math.round(score * 0.15),
+    npm:          Math.round(score * 0.10)
+  };
+
   return {
     id, name, category: cat, trendScore: score,
     changePercent: changePercent, // 前週比・前期間比の変化率% (+15.2 や -8.4 等)
+    weightedBreakdown,           // ソースごとの重みづけ評価内訳
     mentions24h: Math.round(baseMentions / 30),
     mentions7d: Math.round(baseMentions / 4),
     mentions30d: baseMentions,

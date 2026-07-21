@@ -119,22 +119,32 @@ export async function onRequestGet(context) {
       }
     }
 
-    // --- トレンドスコアリング & 前週比モメンタム補正 ---
+    // --- データソース別重みづけ評価アルゴリズム (Weighted Scoring Model) ---
+    // 重み配分: Google Trends(30%), GitHub(25%), Hacker News(20%), Reddit(15%), npm(10%)
     if (hnMentions > 0 || githubStars > 0 || npmDownloads > 0) {
-      const hnScore = Math.min(40, Math.log2(hnMentions + 1) * 5.5);
-      const starScore = githubStars > 0 ? Math.min(30, Math.log10(githubStars + 1) * 5) : 0;
-      const dlScore = npmDownloads > 0 ? Math.min(30, Math.log10(npmDownloads + 1) * 4) : 10;
+      const googleRaw = Math.min(100, Math.log10(tool.mentions30d + 1) * 20);
+      const githubRaw = githubStars > 0 ? Math.min(100, Math.log10(githubStars + 1) * 18) : 50;
+      const hnRaw     = Math.min(100, Math.log2(hnMentions + 1) * 14);
+      const redditRaw = Math.min(100, Math.log2(hnMentions * 1.5 + 1) * 12);
+      const npmRaw    = npmDownloads > 0 ? Math.min(100, Math.log10(npmDownloads + 1) * 15) : 40;
 
-      let calculatedScore = Math.round(hnScore + starScore + dlScore);
+      // 重みづけ合成スコアの算出
+      const weightedScore = Math.round(
+        googleRaw * 0.30 +
+        githubRaw * 0.25 +
+        hnRaw     * 0.20 +
+        redditRaw * 0.15 +
+        npmRaw    * 0.10
+      );
 
-      const totalIndicator = githubStars + (npmDownloads / 10);
-      const activityRatio = hnMentions / (Math.log10(totalIndicator + 1) + 1);
-
-      if (activityRatio > 2.0) {
-        calculatedScore = Math.round(calculatedScore * 1.15);
-      }
-
-      tool.trendScore = Math.max(30, Math.min(99, calculatedScore));
+      tool.trendScore = Math.max(30, Math.min(99, weightedScore));
+      tool.weightedBreakdown = {
+        googleTrends: Math.round(googleRaw * 0.30),
+        github:       Math.round(githubRaw * 0.25),
+        hackerNews:   Math.round(hnRaw     * 0.20),
+        reddit:       Math.round(redditRaw * 0.15),
+        npm:          Math.round(npmRaw    * 0.10)
+      };
 
       tool.mentions24h = Math.max(10, Math.round(hnMentions * 1.8 + Math.log10(githubStars + 1) * 50));
       tool.mentions7d = Math.max(50, Math.round(hnMentions * 10 + Math.log10(githubStars + 1) * 200));
