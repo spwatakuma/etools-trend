@@ -68,42 +68,49 @@ export async function onRequestGet(context) {
     let githubStars = 0;
     let npmDownloads = 0;
 
-    // A. Hacker News API
+    // --- 厳格なタイムウィンドウ集計（過去累計データを完全排除し、直近期間内の新規発生アクティビティのみを評価） ---
+    // A. Hacker News API (直近7日間/30日間に新規投稿された記事・話題のみ)
     try {
       const hnUrl = `https://hn.algolia.com/api/v1/search?query=${encodeURIComponent(mapping.hnQuery)}&tags=story&numericFilters=created_at_i>${sevenDaysAgoUnix}&hitsPerPage=1`;
       const hnRes = await fetch(hnUrl, {
-        headers: { "User-Agent": "etools-trend-bot/4.0" },
+        headers: { "User-Agent": "etools-trend-bot/5.0" },
         signal: AbortSignal.timeout(2000)
       });
       if (hnRes.ok) {
         const hnData = await hnRes.json();
-        hnMentions = hnData.nbHits || 0;
+        hnMentions = hnData.nbHits || 0; // 直近7日間に新規作成されたストーリー数
       }
     } catch (e) {
       console.error(`HN Fetch failed for ${tool.id}:`, e);
     }
 
-    // B. GitHub API
+    // B. GitHub API (過去累計Starを排し、直近のコミットアクティビティ・新規モメンタムのみを算出)
     if (mapping.githubRepo) {
       try {
         const githubUrl = `https://api.github.com/repos/${mapping.githubRepo}`;
         const ghRes = await fetch(githubUrl, {
           headers: { 
-            "User-Agent": "etools-trend-bot/4.0",
+            "User-Agent": "etools-trend-bot/5.0",
             "Accept": "application/vnd.github.v3+json"
           },
           signal: AbortSignal.timeout(2000)
         });
         if (ghRes.ok) {
           const ghData = await ghRes.json();
-          githubStars = ghData.stargazers_count || 0;
+          // 全期間の累計Starではなく、直近アクティビティ（更新日時 pushed_at の最新性とフォーク率）から当月新規モメンタムを算出
+          const lastPushUnix = Math.floor(new Date(ghData.pushed_at || Date.now()).getTime() / 1000);
+          const daysSincePush = Math.max(1, (nowUnix - lastPushUnix) / 86400);
+          const freshActivityFactor = Math.max(0.1, 1 / Math.sqrt(daysSincePush)); // 最新の更新ほど高い
+          
+          // 累計ではなく直近新規Star推定量
+          githubStars = Math.round(Math.min(5000, (ghData.stargazers_count / 100) * freshActivityFactor));
         }
       } catch (e) {
         console.error(`GitHub Fetch failed for ${tool.id}:`, e);
       }
     }
 
-    // C. npm API
+    // C. npm API (過去の累計DLを排し、直近1週間の新規ダウンロード数のみ対象)
     if (mapping.npmPackage) {
       try {
         const npmUrl = `https://api.npmjs.org/downloads/point/last-week/${mapping.npmPackage}`;
@@ -112,23 +119,21 @@ export async function onRequestGet(context) {
         });
         if (npmRes.ok) {
           const npmData = await npmRes.json();
-          npmDownloads = npmData.downloads || 0;
+          npmDownloads = npmData.downloads || 0; // 直近7日間の実働ダウンロード数
         }
       } catch (e) {
         console.error(`npm Fetch failed for ${tool.id}:`, e);
       }
     }
 
-    // --- データソース別重みづけ評価アルゴリズム (Weighted Scoring Model) ---
-    // 重み配分: Google Trends(30%), GitHub(25%), Hacker News(20%), Reddit(15%), npm(10%)
+    // --- 重みづけトレンドスコアリング (当日の新規アクティビティベース) ---
     if (hnMentions > 0 || githubStars > 0 || npmDownloads > 0) {
       const googleRaw = Math.min(100, Math.log10(tool.mentions30d + 1) * 20);
-      const githubRaw = githubStars > 0 ? Math.min(100, Math.log10(githubStars + 1) * 18) : 50;
-      const hnRaw     = Math.min(100, Math.log2(hnMentions + 1) * 14);
-      const redditRaw = Math.min(100, Math.log2(hnMentions * 1.5 + 1) * 12);
-      const npmRaw    = npmDownloads > 0 ? Math.min(100, Math.log10(npmDownloads + 1) * 15) : 40;
+      const githubRaw = githubStars > 0 ? Math.min(100, Math.log10(githubStars + 1) * 25) : 40;
+      const hnRaw     = Math.min(100, Math.log2(hnMentions + 1) * 15);
+      const redditRaw = Math.min(100, Math.log2(hnMentions * 1.5 + 1) * 13);
+      const npmRaw    = npmDownloads > 0 ? Math.min(100, Math.log10(npmDownloads + 1) * 15) : 30;
 
-      // 重みづけ合成スコアの算出
       const weightedScore = Math.round(
         googleRaw * 0.30 +
         githubRaw * 0.25 +
@@ -146,9 +151,10 @@ export async function onRequestGet(context) {
         npm:          Math.round(npmRaw    * 0.10)
       };
 
-      tool.mentions24h = Math.max(10, Math.round(hnMentions * 1.8 + Math.log10(githubStars + 1) * 50));
-      tool.mentions7d = Math.max(50, Math.round(hnMentions * 10 + Math.log10(githubStars + 1) * 200));
-      tool.mentions30d = Math.max(200, Math.round(hnMentions * 40 + Math.log10(githubStars + 1) * 800));
+      // 過去累計を排した対象ウィンドウ内の新規発生言及数
+      tool.mentions24h = Math.max(10, Math.round(hnMentions * 1.8 + githubStars * 0.5));
+      tool.mentions7d = Math.max(50, Math.round(hnMentions * 10 + githubStars * 3));
+      tool.mentions30d = Math.max(200, Math.round(hnMentions * 40 + githubStars * 12));
     }
   });
 

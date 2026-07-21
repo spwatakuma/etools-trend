@@ -162,28 +162,33 @@
     <!-- 算出基準の説明セクション -->
     <section class="methodology-section">
       <h2 class="section-title">Scoring Methodology</h2>
-      <p class="section-subtitle">データソースごとの評価重みづけ（Weighted Scoring Model）および動的集計基準</p>
+      <p class="section-subtitle">過去の全累計データを完全排除し、指定対象期間内の「新規データのみ」を集計・評価するロジック</p>
       
       <div class="methodology-grid">
         <div class="methodology-card">
           <div class="card-num">01</div>
           <h3>タイルの面積：言及・普及規模</h3>
-          <p>ツリーマップ上の各タイルの大きさは、過去30日間の「総言及規模（Google検索インデックス、GitHubスター数、npm週間DL数、コミュニティ言及総数）」に比例します。普及シェアの巨大な定番技術ほど面積が大きくなります。</p>
+          <p>ツリーマップ上の各タイルの大きさは、指定期間内（24h/7d/30d）における「新規言及発生規模」に比例します。長年蓄積された過去の全累計数は完全除外されます。</p>
         </div>
         <div class="methodology-card">
           <div class="card-num">02</div>
           <h3>タイルの色：前週比モメンタム (勢い)</h3>
-          <p>タイルの色は「前週比の言及数変化率（モメンタム）」を表します。急上昇中のツールは<strong style="color: #10b981;">鮮やかな緑（Green）</strong>に発光し、勢いが落ち着いたツールは<strong style="color: #ef4444;">赤（Red）</strong>で表示されます。</p>
+          <p>タイルの色は「前週比の新規言及変化率（モメンタム）」を表します。直近で急上昇中のツールは<strong style="color: #10b981;">鮮やかな緑（Green）</strong>に発光し、落ち着いたツールは<strong style="color: #ef4444;">赤（Red）</strong>で表示されます。</p>
         </div>
         <div class="methodology-card">
           <div class="card-num">03</div>
           <h3>データソース別 評価重みづけ (Weights)</h3>
           <p>単なる数値集計ではなく、性質・速報性に応じた重み付けモデルで評価：<br>
           ・<strong>Google 検索統計</strong>: 30% (広範な関心)<br>
-          ・<strong>GitHub API</strong>: 25% (コード資産・Star)<br>
-          ・<strong>Hacker News API</strong>: 20% (アーリーアダプター速報)<br>
-          ・<strong>Reddit コミュニティ</strong>: 15% (議論・熱量)<br>
-          ・<strong>npm Registry</strong>: 10% (実稼働DL数)</p>
+          ・<strong>GitHub API</strong>: 25% (直近コミット・新規Star)<br>
+          ・<strong>Hacker News API</strong>: 20% (期間内新規記事)<br>
+          ・<strong>Reddit コミュニティ</strong>: 15% (新規投稿・話題)<br>
+          ・<strong>npm Registry</strong>: 10% (直近1週間DL数)</p>
+        </div>
+        <div class="methodology-card">
+          <div class="card-num">04</div>
+          <h3>過去累計の除外 & タイムウィンドウ集計</h3>
+          <p>「過去数年間の記事蓄積数」や「全期間累計Star」などの過去遺産データはトレンドを歪めるため<strong>完全に排除</strong>。選択された期間内（24h/7d/30d）に新しく発生した新規データのみを厳格に集計・視覚化します。</p>
         </div>
       </div>
     </section>

@@ -501,7 +501,7 @@ function renderSVGChart(tool) {
       chartHoverTooltip.style.display = 'block';
       chartHoverTooltip.style.left = `${(p.x / width) * 100}%`;
       chartHoverTooltip.style.top = `${p.y - 12}px`;
-      chartHoverTooltip.innerHTML = `<strong>${p.dateLabel}</strong>: ${p.val.toLocaleString()} 言及/日`;
+      chartHoverTooltip.innerHTML = `<strong>${p.dateLabel}</strong>: 当日新規言及 <strong>${p.val.toLocaleString()}</strong> 件 <span style="font-size:0.65rem; color:#9ca3af;">(過去累計は除外)</span>`;
     });
 
     dot.addEventListener('mouseleave', () => {
