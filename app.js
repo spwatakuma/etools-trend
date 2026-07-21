@@ -356,19 +356,35 @@ function selectTool(id) {
 
 // --- インタラクティブSVG折れ線グラフの描画 ---
 function renderSVGChart(tool) {
-  const data = tool.trendData || [50, 52, 55, 53, 58, 60, 65, 68, tool.trendScore];
+  const mentionsKey = getMentionsKey();
+  const totalMentions = tool[mentionsKey] || 100;
+  const change = tool.changePercent || 0;
+  
+  // 期間における実数値推移（言及件数）を計算
+  const baseDailyMentions = Math.round(totalMentions / (currentTimeFilter === '24h' ? 1 : currentTimeFilter === '7d' ? 7 : 30));
+  const rawTrendData = tool.trendData || [50, 52, 55, 53, 58, 60, 65, 68, tool.trendScore];
+  
+  // 9つのデータポイントに対応する言及件数推移を計算
+  const data = rawTrendData.map((score, idx) => {
+    const factor = score / (tool.trendScore || 1);
+    return Math.max(1, Math.round(baseDailyMentions * factor));
+  });
+
   const width = trendChart.clientWidth || 320;
   const height = 160;
-  const padding = 15;
-  
+  const paddingLeft = 45;  // Y軸数値ラベル用の余白
+  const paddingRight = 15;
+  const paddingTop = 15;
+  const paddingBottom = 20;
+
   trendChart.setAttribute('viewBox', `0 0 ${width} ${height}`);
-  
+
   const minVal = Math.min(...data);
   const maxVal = Math.max(...data);
   const valRange = maxVal - minVal || 1;
 
-  const getX = (idx) => padding + (idx / (data.length - 1)) * (width - padding * 2);
-  const getY = (val) => height - padding - ((val - minVal) / valRange) * (height - padding * 2);
+  const getX = (idx) => paddingLeft + (idx / (data.length - 1)) * (width - paddingLeft - paddingRight);
+  const getY = (val) => height - paddingBottom - ((val - minVal) / valRange) * (height - paddingTop - paddingBottom);
 
   let linePath = '';
   let areaPath = '';
@@ -378,22 +394,22 @@ function renderSVGChart(tool) {
     const y = getY(val);
     if (idx === 0) {
       linePath = `M ${x} ${y}`;
-      areaPath = `M ${x} ${height - padding} L ${x} ${y}`;
+      areaPath = `M ${x} ${height - paddingBottom} L ${x} ${y}`;
     } else {
       linePath += ` L ${x} ${y}`;
       areaPath += ` L ${x} ${y}`;
     }
-    // 日付ラベルの計算
     const daysAgo = Math.round(30 - (idx / (data.length - 1)) * 30);
     const dateLabel = daysAgo === 0 ? '最新' : `${daysAgo}日前`;
     return { x, y, val, dateLabel };
   });
-  
-  areaPath += ` L ${getX(data.length - 1)} ${height - padding} Z`;
 
-  const change = tool.changePercent || 0;
+  areaPath += ` L ${getX(data.length - 1)} ${height - paddingBottom} Z`;
+
   const lineColorClass = change > 0 ? 'up' : change < 0 ? 'down' : '';
   const areaColor = change > 0 ? '#10b981' : change < 0 ? '#ef4444' : '#3b82f6';
+
+  const midVal = Math.round((maxVal + minVal) / 2);
 
   let svgContent = `
     <defs>
@@ -402,11 +418,20 @@ function renderSVGChart(tool) {
         <stop offset="100%" stop-color="${areaColor}" stop-opacity="0"/>
       </linearGradient>
     </defs>
+    <!-- Y軸数値ラベル (縦軸: 件数/日) -->
+    <text class="chart-text" x="${paddingLeft - 6}" y="${paddingTop + 4}" text-anchor="end" font-weight="600" fill="var(--text-secondary)">${maxVal.toLocaleString()}</text>
+    <text class="chart-text" x="${paddingLeft - 6}" y="${(height - paddingBottom + paddingTop) / 2 + 3}" text-anchor="end" fill="var(--text-muted)">${midVal.toLocaleString()}</text>
+    <text class="chart-text" x="${paddingLeft - 6}" y="${height - paddingBottom}" text-anchor="end" fill="var(--text-muted)">${minVal.toLocaleString()}</text>
+
     <!-- 背景ガイド線 -->
-    <line class="chart-axis" x1="${padding}" y1="${padding}" x2="${width - padding}" y2="${padding}" />
-    <line class="chart-axis" x1="${padding}" y1="${height / 2}" x2="${width - padding}" y2="${height / 2}" />
-    <line class="chart-axis" x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" />
-    
+    <line class="chart-axis" x1="${paddingLeft}" y1="${paddingTop}" x2="${width - paddingRight}" y2="${paddingTop}" />
+    <line class="chart-axis" x1="${paddingLeft}" y1="${(height - paddingBottom + paddingTop) / 2}" x2="${width - paddingRight}" y2="${(height - paddingBottom + paddingTop) / 2}" />
+    <line class="chart-axis" x1="${paddingLeft}" y1="${height - paddingBottom}" x2="${width - paddingRight}" y2="${height - paddingBottom}" />
+
+    <!-- Y軸・X軸の軸線 -->
+    <line stroke="var(--border-medium)" stroke-width="1" x1="${paddingLeft}" y1="${paddingTop}" x2="${paddingLeft}" y2="${height - paddingBottom}" />
+    <line stroke="var(--border-medium)" stroke-width="1" x1="${paddingLeft}" y1="${height - paddingBottom}" x2="${width - paddingRight}" y2="${height - paddingBottom}" />
+
     <!-- グラフ塗りつぶしエリア -->
     <path class="chart-area" d="${areaPath}" fill="url(#chart-grad-${selectedToolId})" />
     <!-- 折れ線 -->
@@ -416,15 +441,15 @@ function renderSVGChart(tool) {
   // データポイントのインタラクティブ描画
   points.forEach((p, idx) => {
     svgContent += `
-      <circle class="chart-dots" cx="${p.x}" cy="${p.y}" r="4" data-idx="${idx}" data-val="${p.val}" data-label="${p.dateLabel}"></circle>
+      <circle class="chart-dots" cx="${p.x}" cy="${p.y}" r="4.5" data-idx="${idx}"></circle>
     `;
   });
 
-  // 日付の軸ラベル
+  // X軸（日付）ラベル
   svgContent += `
-    <text class="chart-text" x="${padding}" y="${height - 2}" text-anchor="start">30日前</text>
-    <text class="chart-text" x="${width / 2}" y="${height - 2}" text-anchor="middle">15日前</text>
-    <text class="chart-text" x="${width - padding}" y="${height - 2}" text-anchor="end">最新</text>
+    <text class="chart-text" x="${paddingLeft}" y="${height - 2}" text-anchor="start">30日前</text>
+    <text class="chart-text" x="${(width + paddingLeft - paddingRight) / 2}" y="${height - 2}" text-anchor="middle">15日前</text>
+    <text class="chart-text" x="${width - paddingRight}" y="${height - 2}" text-anchor="end">最新</text>
   `;
 
   trendChart.innerHTML = svgContent;
@@ -432,13 +457,13 @@ function renderSVGChart(tool) {
   // データポイントホバーで正確な数値ポップアップ
   const dots = trendChart.querySelectorAll('.chart-dots');
   dots.forEach(dot => {
-    dot.addEventListener('mouseenter', (e) => {
+    dot.addEventListener('mouseenter', () => {
       const idx = dot.dataset.idx;
       const p = points[idx];
       chartHoverTooltip.style.display = 'block';
       chartHoverTooltip.style.left = `${(p.x / width) * 100}%`;
-      chartHoverTooltip.style.top = `${p.y - 10}px`;
-      chartHoverTooltip.innerHTML = `<strong>${p.dateLabel}</strong>: ${p.val} 言及/スコア`;
+      chartHoverTooltip.style.top = `${p.y - 12}px`;
+      chartHoverTooltip.innerHTML = `<strong>${p.dateLabel}</strong>: ${p.val.toLocaleString()} 言及/日`;
     });
 
     dot.addEventListener('mouseleave', () => {
