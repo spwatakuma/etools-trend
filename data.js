@@ -31,37 +31,22 @@ export const sourceWeights = {
   npm:          0.10  // 10%: パッケージ・実動ライブラリ (実環境DL数)
 };
 
-// 開発コミュニティのリアルな曜日サイクル (Weekend Dip) と話題の波を再現するデータ生成関数
-function generateRealisticTrendData(score, changePercent, length = 10) {
+// 前週比モメンタム (changePercent) に基づく滑らかな自然推移カーブ算出関数
+function generateSmoothTrendData(score, changePercent, length = 10) {
   const baseStep = (changePercent / 100) / (length - 1);
-  const today = new Date();
   
   return Array.from({ length }, (_, idx) => {
-    // 1. 長期モメンタムに基づくトレンドベース
-    const trendFactor = 1 + baseStep * (idx - (length - 1));
-    
-    // 2. 実際の曜日サイクルの再現 (土日は開発・投稿アクティビティが25%〜35%低下)
-    const daysAgo = Math.round((30 / (length - 1)) * (length - 1 - idx));
-    const targetDate = new Date(today.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-    const dayOfWeek = targetDate.getDay(); // 0: 日曜, 6: 土曜
-    
-    let weekendFactor = 1.0;
-    if (dayOfWeek === 0) weekendFactor = 0.68;      // 日曜日は約32%減少
-    else if (dayOfWeek === 6) weekendFactor = 0.78; // 土曜日は約22%減少
-    else if (dayOfWeek === 2 || dayOfWeek === 3) weekendFactor = 1.06; // 火・水曜日は週のピーク
-    
-    // 3. 話題の自然な波（ニュースやリリースによる小さなスパイク）
-    const noise = Math.sin(idx * 2.1 + (score % 7)) * 0.05;
-    
-    const finalScore = Math.round(score * trendFactor * weekendFactor * (1 + noise));
+    // モメンタムに基づく自然な推移 (人工的なノイズや不自然なジグザグ関数は一切除外)
+    const factor = 1 + baseStep * (idx - (length - 1));
+    const finalScore = Math.round(score * factor);
     return Math.max(10, Math.min(99, finalScore));
   });
 }
 
 // 500個のデータを効率的に定義・保持するヘルパー関数
 function c(id, name, cat, score, changePercent, baseMentions, desc, isAff = false, price = "", url = "", img = "") {
-  // 曜日周期と自然波形を持ったリアルな過去30日間トレンド推移を算出
-  const trendData = generateRealisticTrendData(score, changePercent, 10);
+  // 滑らかな自然トレンド推移を算出
+  const trendData = generateSmoothTrendData(score, changePercent, 10);
 
   // データソース別重み評価の内訳 (Weighted Breakdown)
   const weightedBreakdown = {

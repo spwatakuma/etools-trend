@@ -526,11 +526,10 @@ function renderSVGChart(tool) {
     <path class="chart-line ${lineColorClass}" d="${linePath}" />
   `;
 
-  // データポイントのプロット (土日は赤ぽいドット、平日は青緑ドットで視覚的区別)
+  // データポイントのプロット
   points.forEach((p, idx) => {
-    const dotFill = p.isWeekend ? '#ef4444' : areaColor;
     svgContent += `
-      <circle class="chart-dots" cx="${p.x}" cy="${p.y}" r="4.5" fill="${dotFill}" data-idx="${idx}"></circle>
+      <circle class="chart-dots" cx="${p.x}" cy="${p.y}" r="4.5" fill="${areaColor}" data-idx="${idx}"></circle>
     `;
   });
 
@@ -547,17 +546,16 @@ function renderSVGChart(tool) {
 
   trendChart.innerHTML = svgContent;
 
-  // データポイントホバーで曜日の情報を含む詳細ポップアップ
+  // データポイントホバーで正確な数値ポップアップ
   const dots = trendChart.querySelectorAll('.chart-dots');
   dots.forEach(dot => {
     dot.addEventListener('mouseenter', () => {
       const idx = dot.dataset.idx;
       const p = points[idx];
-      const weekendNote = p.isWeekend ? ' <span style="color:#ef4444; font-weight:600;">(休日: 減速)</span>' : '';
       chartHoverTooltip.style.display = 'block';
       chartHoverTooltip.style.left = `${(p.x / width) * 100}%`;
       chartHoverTooltip.style.top = `${p.y - 12}px`;
-      chartHoverTooltip.innerHTML = `<strong>${p.displayLabel}</strong>${weekendNote}<br>新規発生: <strong>${p.val.toLocaleString()}</strong> 件`;
+      chartHoverTooltip.innerHTML = `<strong>${p.displayLabel}</strong><br>新規発生: <strong>${p.val.toLocaleString()}</strong> 件`;
     });
 
     dot.addEventListener('mouseleave', () => {
