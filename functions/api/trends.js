@@ -110,16 +110,25 @@ export async function onRequestGet(context) {
       }
     }
 
-    // C. npm API (過去の累計DLを排し、直近1週間の新規ダウンロード数のみ対象)
+    // C. npm API (本物の過去30日間の日別ダウンロード数生データを直接取得)
     if (mapping.npmPackage) {
       try {
-        const npmUrl = `https://api.npmjs.org/downloads/point/last-week/${mapping.npmPackage}`;
-        const npmRes = await fetch(npmUrl, {
-          signal: AbortSignal.timeout(2000)
+        const npmRangeUrl = `https://api.npmjs.org/downloads/range/last-month/${mapping.npmPackage}`;
+        const npmRes = await fetch(npmRangeUrl, {
+          signal: AbortSignal.timeout(2500)
         });
         if (npmRes.ok) {
           const npmData = await npmRes.json();
-          npmDownloads = npmData.downloads || 0; // 直近7日間の実働ダウンロード数
+          if (npmData.downloads && Array.isArray(npmData.downloads)) {
+            // 本物の過去30日間の日別ダウンロード件数配列を取得
+            tool.realDailyData = npmData.downloads.map(d => ({
+              date: d.day,
+              count: d.downloads
+            }));
+            // 直近7日間の本物ダウンロード合計
+            const last7Days = npmData.downloads.slice(-7);
+            npmDownloads = last7Days.reduce((sum, d) => sum + d.downloads, 0);
+          }
         }
       } catch (e) {
         console.error(`npm Fetch failed for ${tool.id}:`, e);
