@@ -4,3 +4,10 @@ package.json
 package-lock.json
 tsconfig.json
 astro.config.mjs
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
