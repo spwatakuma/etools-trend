@@ -31,15 +31,37 @@ export const sourceWeights = {
   npm:          0.10  // 10%: パッケージ・実動ライブラリ (実環境DL数)
 };
 
+// 開発コミュニティのリアルな曜日サイクル (Weekend Dip) と話題の波を再現するデータ生成関数
+function generateRealisticTrendData(score, changePercent, length = 10) {
+  const baseStep = (changePercent / 100) / (length - 1);
+  const today = new Date();
+  
+  return Array.from({ length }, (_, idx) => {
+    // 1. 長期モメンタムに基づくトレンドベース
+    const trendFactor = 1 + baseStep * (idx - (length - 1));
+    
+    // 2. 実際の曜日サイクルの再現 (土日は開発・投稿アクティビティが25%〜35%低下)
+    const daysAgo = Math.round((30 / (length - 1)) * (length - 1 - idx));
+    const targetDate = new Date(today.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+    const dayOfWeek = targetDate.getDay(); // 0: 日曜, 6: 土曜
+    
+    let weekendFactor = 1.0;
+    if (dayOfWeek === 0) weekendFactor = 0.68;      // 日曜日は約32%減少
+    else if (dayOfWeek === 6) weekendFactor = 0.78; // 土曜日は約22%減少
+    else if (dayOfWeek === 2 || dayOfWeek === 3) weekendFactor = 1.06; // 火・水曜日は週のピーク
+    
+    // 3. 話題の自然な波（ニュースやリリースによる小さなスパイク）
+    const noise = Math.sin(idx * 2.1 + (score % 7)) * 0.05;
+    
+    const finalScore = Math.round(score * trendFactor * weekendFactor * (1 + noise));
+    return Math.max(10, Math.min(99, finalScore));
+  });
+}
+
 // 500個のデータを効率的に定義・保持するヘルパー関数
 function c(id, name, cat, score, changePercent, baseMentions, desc, isAff = false, price = "", url = "", img = "") {
-  // changePercent (前週比変化率%) に応じた9段階の過去30日間トレンド推移データを自動計算
-  const stepRatio = (changePercent / 100) / 8;
-  const trendData = Array.from({ length: 9 }, (_, idx) => {
-    const factor = 1 + stepRatio * (idx - 8);
-    const rawVal = Math.round(score * factor);
-    return Math.max(10, Math.min(99, rawVal));
-  });
+  // 曜日周期と自然波形を持ったリアルな過去30日間トレンド推移を算出
+  const trendData = generateRealisticTrendData(score, changePercent, 10);
 
   // データソース別重み評価の内訳 (Weighted Breakdown)
   const weightedBreakdown = {

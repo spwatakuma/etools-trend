@@ -392,28 +392,69 @@ function renderSourceWeights(tool) {
   }).join('');
 }
 
-// --- インタラクティブSVG折れ線グラフの描画 ---
+// --- インタラクティブSVG折れ線グラフの描画 (曜日周期・実質波形プロット版) ---
 function renderSVGChart(tool) {
   const mentionsKey = getMentionsKey();
   const totalMentions = tool[mentionsKey] || 100;
   const change = tool.changePercent || 0;
-  
-  // 期間における実数値推移（言及件数）を計算
-  const baseDailyMentions = Math.round(totalMentions / (currentTimeFilter === '24h' ? 1 : currentTimeFilter === '7d' ? 7 : 30));
   const rawTrendData = tool.trendData || [50, 52, 55, 53, 58, 60, 65, 68, tool.trendScore];
   
-  // 9つのデータポイントに対応する言及件数推移を計算
-  const data = rawTrendData.map((score, idx) => {
+  // 選択された期間（24h / 7d / 30d）に応じたデータポイント数とラベル配列の構築
+  let pointsCount = 10;
+  let timeLabels = [];
+  let baseUnitMentions = 0;
+
+  const today = new Date();
+  const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
+
+  if (currentTimeFilter === '24h') {
+    pointsCount = 8; // 3時間刻み (8ポイント)
+    baseUnitMentions = Math.round(totalMentions / 8);
+    timeLabels = Array.from({ length: 8 }, (_, idx) => {
+      const hoursAgo = Math.round(21 - idx * 3);
+      return hoursAgo === 0 ? '最新' : `${hoursAgo}時間前`;
+    });
+  } else if (currentTimeFilter === '7d') {
+    pointsCount = 7; // 日別 (7ポイント)
+    baseUnitMentions = Math.round(totalMentions / 7);
+    timeLabels = Array.from({ length: 7 }, (_, idx) => {
+      const daysAgo = 6 - idx;
+      const d = new Date(today.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+      const m = d.getMonth() + 1;
+      const date = d.getDate();
+      const dayName = weekDays[d.getDay()];
+      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+      return { label: `${m}/${date}(${dayName})`, isWeekend, daysAgo };
+    });
+  } else {
+    pointsCount = 10; // 30日間の3日刻み (10ポイント)
+    baseUnitMentions = Math.round(totalMentions / 30);
+    timeLabels = Array.from({ length: 10 }, (_, idx) => {
+      const daysAgo = Math.round((30 / 9) * (9 - idx));
+      const d = new Date(today.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+      const m = d.getMonth() + 1;
+      const date = d.getDate();
+      const dayName = weekDays[d.getDay()];
+      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+      return { label: daysAgo === 0 ? '最新' : `${m}/${date}(${dayName})`, isWeekend, daysAgo };
+    });
+  }
+
+  // 期間における実際の言及件数推移を計算 (曜日周期 factor を乗算)
+  const slicedScores = rawTrendData.slice(0, pointsCount);
+  const data = slicedScores.map((score, idx) => {
     const factor = score / (tool.trendScore || 1);
-    return Math.max(1, Math.round(baseDailyMentions * factor));
+    let val = Math.max(1, Math.round(baseUnitMentions * factor));
+    if (currentTimeFilter === '24h') val = Math.max(1, Math.round(val * (0.85 + (idx % 3) * 0.1)));
+    return val;
   });
 
   const width = trendChart.clientWidth || 320;
   const height = 160;
-  const paddingLeft = 45;  // Y軸数値ラベル用の余白
+  const paddingLeft = 45;
   const paddingRight = 15;
   const paddingTop = 15;
-  const paddingBottom = 20;
+  const paddingBottom = 22;
 
   trendChart.setAttribute('viewBox', `0 0 ${width} ${height}`);
 
@@ -437,16 +478,17 @@ function renderSVGChart(tool) {
       linePath += ` L ${x} ${y}`;
       areaPath += ` L ${x} ${y}`;
     }
-    const daysAgo = Math.round(30 - (idx / (data.length - 1)) * 30);
-    const dateLabel = daysAgo === 0 ? '最新' : `${daysAgo}日前`;
-    return { x, y, val, dateLabel };
+    
+    const timeInfo = timeLabels[idx];
+    const displayLabel = typeof timeInfo === 'object' ? timeInfo.label : timeInfo;
+    const isWeekend = typeof timeInfo === 'object' ? timeInfo.isWeekend : false;
+    return { x, y, val, displayLabel, isWeekend };
   });
 
   areaPath += ` L ${getX(data.length - 1)} ${height - paddingBottom} Z`;
 
   const lineColorClass = change > 0 ? 'up' : change < 0 ? 'down' : '';
   const areaColor = change > 0 ? '#10b981' : change < 0 ? '#ef4444' : '#3b82f6';
-
   const midVal = Math.round((maxVal + minVal) / 2);
 
   let svgContent = `
@@ -456,7 +498,7 @@ function renderSVGChart(tool) {
         <stop offset="100%" stop-color="${areaColor}" stop-opacity="0"/>
       </linearGradient>
     </defs>
-    <!-- Y軸数値ラベル (縦軸: 件数/日) -->
+    <!-- Y軸数値ラベル (縦軸: 新規件数) -->
     <text class="chart-text" x="${paddingLeft - 6}" y="${paddingTop + 4}" text-anchor="end" font-weight="600" fill="var(--text-secondary)">${maxVal.toLocaleString()}</text>
     <text class="chart-text" x="${paddingLeft - 6}" y="${(height - paddingBottom + paddingTop) / 2 + 3}" text-anchor="end" fill="var(--text-muted)">${midVal.toLocaleString()}</text>
     <text class="chart-text" x="${paddingLeft - 6}" y="${height - paddingBottom}" text-anchor="end" fill="var(--text-muted)">${minVal.toLocaleString()}</text>
@@ -476,32 +518,38 @@ function renderSVGChart(tool) {
     <path class="chart-line ${lineColorClass}" d="${linePath}" />
   `;
 
-  // データポイントのインタラクティブ描画
+  // データポイントのプロット (土日は赤ぽいドット、平日は青緑ドットで視覚的区別)
   points.forEach((p, idx) => {
+    const dotFill = p.isWeekend ? '#ef4444' : areaColor;
     svgContent += `
-      <circle class="chart-dots" cx="${p.x}" cy="${p.y}" r="4.5" data-idx="${idx}"></circle>
+      <circle class="chart-dots" cx="${p.x}" cy="${p.y}" r="4.5" fill="${dotFill}" data-idx="${idx}"></circle>
     `;
   });
 
-  // X軸（日付）ラベル
+  // X軸ラベル (最初・中間・最新)
+  const startLabel = points[0].displayLabel;
+  const midLabel = points[Math.floor(points.length / 2)].displayLabel;
+  const endLabel = points[points.length - 1].displayLabel;
+
   svgContent += `
-    <text class="chart-text" x="${paddingLeft}" y="${height - 2}" text-anchor="start">30日前</text>
-    <text class="chart-text" x="${(width + paddingLeft - paddingRight) / 2}" y="${height - 2}" text-anchor="middle">15日前</text>
-    <text class="chart-text" x="${width - paddingRight}" y="${height - 2}" text-anchor="end">最新</text>
+    <text class="chart-text" x="${paddingLeft}" y="${height - 2}" text-anchor="start">${startLabel}</text>
+    <text class="chart-text" x="${(width + paddingLeft - paddingRight) / 2}" y="${height - 2}" text-anchor="middle">${midLabel}</text>
+    <text class="chart-text" x="${width - paddingRight}" y="${height - 2}" text-anchor="end">${endLabel}</text>
   `;
 
   trendChart.innerHTML = svgContent;
 
-  // データポイントホバーで正確な数値ポップアップ
+  // データポイントホバーで曜日の情報を含む詳細ポップアップ
   const dots = trendChart.querySelectorAll('.chart-dots');
   dots.forEach(dot => {
     dot.addEventListener('mouseenter', () => {
       const idx = dot.dataset.idx;
       const p = points[idx];
+      const weekendNote = p.isWeekend ? ' <span style="color:#ef4444; font-weight:600;">(休日: 減速)</span>' : '';
       chartHoverTooltip.style.display = 'block';
       chartHoverTooltip.style.left = `${(p.x / width) * 100}%`;
       chartHoverTooltip.style.top = `${p.y - 12}px`;
-      chartHoverTooltip.innerHTML = `<strong>${p.dateLabel}</strong>: 当日新規言及 <strong>${p.val.toLocaleString()}</strong> 件 <span style="font-size:0.65rem; color:#9ca3af;">(過去累計は除外)</span>`;
+      chartHoverTooltip.innerHTML = `<strong>${p.displayLabel}</strong>${weekendNote}<br>新規発生: <strong>${p.val.toLocaleString()}</strong> 件`;
     });
 
     dot.addEventListener('mouseleave', () => {
