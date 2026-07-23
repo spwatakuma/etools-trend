@@ -53,7 +53,7 @@ async function processCronSync(env) {
     });
   }
 
-  // 1. テーブルの初期化
+  // 1. テーブルの初期化 ＆ 過去汚染データの完全クリーンリセット (2026-07-23以前のデータをクリア)
   try {
     await db.prepare(`
       CREATE TABLE IF NOT EXISTS daily_trends (
@@ -66,8 +66,11 @@ async function processCronSync(env) {
         PRIMARY KEY (tool_id, date)
       )
     `).run();
+
+    // 2026年7月23日より前のテスト・汚染データを完全廃棄
+    await db.prepare("DELETE FROM daily_trends WHERE date < '2026-07-23'").run();
   } catch (e) {
-    console.error("Failed to initialize D1 table:", e);
+    console.error("Failed to initialize or clean D1 table:", e);
   }
 
   // 2. 公式APIから全ツールの最新本物データを集計

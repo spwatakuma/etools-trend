@@ -444,43 +444,14 @@ function renderSVGChart(tool) {
       return { label: `${m}/${date}(${dayName})`, isWeekend };
     });
   } else {
-    // C. モック/ベースデータの場合の自然推移計算
-    const rawTrendData = tool.trendData || [50, 52, 55, 53, 58, 60, 65, 68, tool.trendScore];
-    let pointsCount = currentTimeFilter === '24h' ? 8 : currentTimeFilter === '7d' ? 7 : 10;
-    let baseUnitMentions = Math.round(totalMentions / (currentTimeFilter === '24h' ? 8 : currentTimeFilter === '7d' ? 7 : 30));
+    // C. 2026年7月23日集計スタート (Day 1 本日からのクリーン実測プロット)
+    const m = today.getMonth() + 1;
+    const date = today.getDate();
+    const dayName = weekDays[today.getDay()];
+    const isWeekend = today.getDay() === 0 || today.getDay() === 6;
 
-    if (currentTimeFilter === '24h') {
-      timeLabels = Array.from({ length: 8 }, (_, idx) => {
-        const hoursAgo = Math.round(21 - idx * 3);
-        return { label: hoursAgo === 0 ? '最新' : `${hoursAgo}時間前`, isWeekend: false };
-      });
-    } else if (currentTimeFilter === '7d') {
-      timeLabels = Array.from({ length: 7 }, (_, idx) => {
-        const daysAgo = 6 - idx;
-        const d = new Date(today.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-        const m = d.getMonth() + 1;
-        const date = d.getDate();
-        const dayName = weekDays[d.getDay()];
-        const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-        return { label: `${m}/${date}(${dayName})`, isWeekend };
-      });
-    } else {
-      timeLabels = Array.from({ length: 10 }, (_, idx) => {
-        const daysAgo = Math.round((30 / 9) * (9 - idx));
-        const d = new Date(today.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-        const m = d.getMonth() + 1;
-        const date = d.getDate();
-        const dayName = weekDays[d.getDay()];
-        const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-        return { label: daysAgo === 0 ? '最新' : `${m}/${date}(${dayName})`, isWeekend };
-      });
-    }
-
-    const slicedScores = rawTrendData.slice(0, pointsCount);
-    data = slicedScores.map((score) => {
-      const factor = score / (tool.trendScore || 1);
-      return Math.max(1, Math.round(baseUnitMentions * factor));
-    });
+    data = [tool.trendScore || 50];
+    timeLabels = [{ label: `${m}/${date}(${dayName}) 本日スタート`, isWeekend }];
   }
 
   const width = trendChart.clientWidth || 320;

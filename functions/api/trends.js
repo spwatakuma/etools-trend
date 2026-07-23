@@ -46,15 +46,14 @@ export async function onRequestGet(context) {
     return response;
   }
 
-  // 2. D1 データベースから過去30日間の日次本物蓄積データを取得
+  // 2. D1 データベースから本日（2026-07-23）以降の本物蓄積データを取得
   let d1Records = [];
   const db = context.env.DB;
   if (db) {
     try {
-      const thirtyDaysAgoStr = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       const queryResult = await db.prepare(
-        "SELECT tool_id, date, hn_mentions, github_stars, npm_downloads, score FROM daily_trends WHERE date >= ? ORDER BY date ASC"
-      ).bind(thirtyDaysAgoStr).all();
+        "SELECT tool_id, date, hn_mentions, github_stars, npm_downloads, score FROM daily_trends WHERE date >= '2026-07-23' ORDER BY date ASC"
+      ).all();
       
       if (queryResult && queryResult.results) {
         d1Records = queryResult.results;
