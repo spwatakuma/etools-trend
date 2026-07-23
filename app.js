@@ -231,7 +231,7 @@ function renderHeatmap() {
       cell.style.zIndex = '5';
     }
 
-    const mentions = tool[mentionsKey].toLocaleString();
+    const mentions = (tool[mentionsKey] || 0).toLocaleString();
     const changeText = tool.changePercent > 0 ? `+${tool.changePercent}%` : `${tool.changePercent}%`;
 
     const isSmall = tool.w < 12 || tool.h < 12;
@@ -262,7 +262,7 @@ function renderHeatmap() {
     cell.addEventListener('mouseenter', (e) => {
       tooltip.style.opacity = '1';
       const typeStr = tool.isAffiliate ? '（ガジェット・パーツ）' : tool.isDynamic ? '（✨ 自動検知最新トレンド）' : '';
-      tooltip.innerHTML = `<strong>${tool.name} ${typeStr}</strong><br>期間中: ${mentions}言及 (${currentTimeFilter})<br>前週比モメンタム: <strong>${changeText}</strong>`;
+      tooltip.innerHTML = `<strong>${tool.name} ${typeStr}</strong><br>本日実測言及数: <strong>${mentions} 件</strong> (7/23スタート)<br>前週比モメンタム: <strong>${changeText}</strong>`;
       positionTooltip(e);
     });
 
@@ -324,7 +324,7 @@ function selectTool(id) {
   detailDesc.innerText = tool.description;
 
   const key = getMentionsKey();
-  statMentions.innerText = tool[key].toLocaleString();
+  statMentions.innerText = `${(tool[key] || 0).toLocaleString()} 件`;
   statScore.innerText = `${tool.trendScore}/100`;
 
   // 順位の算出

@@ -233,17 +233,18 @@ export async function onRequestGet(context) {
         npm:          Math.round(npmRaw    * 0.10)
       };
 
-      tool.mentions24h = Math.max(10, Math.round(hnMentions * 1.8 + githubStars * 0.5));
-      tool.mentions7d = Math.max(50, Math.round(hnMentions * 10 + githubStars * 3));
-      tool.mentions30d = Math.max(200, Math.round(hnMentions * 40 + githubStars * 12));
+      // 本日（2026-07-23）スタートの本物実測アクティビティカウント（下駄履き・過去シードは完全排除）
+      tool.mentions24h = Math.round(hnMentions + (githubStars > 0 ? 1 : 0));
+      tool.mentions7d = Math.round(hnMentions + (githubStars > 0 ? 1 : 0));
+      tool.mentions30d = Math.round(hnMentions + (githubStars > 0 ? 1 : 0));
     } else if (!tool.d1DailyHistory || tool.d1DailyHistory.length === 0) {
-      // 直近アクティビティが一切確認されない過去・非アクティブツールは固定初期スコアを全剥奪し最下位へ強制降格
+      // 本日の実測アクティビティが0件のツールは言及数 0件 (集計1日目・蓄積中) と正確にプロット
       tool.trendScore = 15;
       tool.changePercent = -20.0;
       tool.mentions24h = 0;
-      tool.mentions7d = 5;
-      tool.mentions30d = 20;
-      tool.weightedBreakdown = { googleTrends: 5, github: 5, hackerNews: 0, reddit: 0, npm: 0 };
+      tool.mentions7d = 0;
+      tool.mentions30d = 0;
+      tool.weightedBreakdown = { googleTrends: 0, github: 0, hackerNews: 0, reddit: 0, npm: 0 };
     }
   });
 
