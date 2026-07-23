@@ -403,8 +403,23 @@ function renderSVGChart(tool) {
   let data = [];
   let timeLabels = [];
 
-  // A. APIから100%本物の過去日別生データ (realDailyData) が取得できている場合
-  if (tool.realDailyData && Array.isArray(tool.realDailyData) && tool.realDailyData.length > 0) {
+  // A. Cloudflare D1 データベースからの本物日次自動蓄積データ (d1DailyHistory) が存在する場合
+  if (tool.d1DailyHistory && Array.isArray(tool.d1DailyHistory) && tool.d1DailyHistory.length > 0) {
+    const rawList = tool.d1DailyHistory;
+    const targetSlice = currentTimeFilter === '24h' ? rawList.slice(-8) : currentTimeFilter === '7d' ? rawList.slice(-7) : rawList.slice(-30);
+    
+    data = targetSlice.map(item => item.score || item.github_stars || item.hn_mentions || 10);
+    timeLabels = targetSlice.map(item => {
+      const d = new Date(item.date);
+      const m = d.getMonth() + 1;
+      const date = d.getDate();
+      const dayName = weekDays[d.getDay()];
+      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+      return { label: `${m}/${date}(${dayName})`, isWeekend };
+    });
+  } 
+  // B. APIから100%本物の過去日別生データ (realDailyData) が取得できている場合
+  else if (tool.realDailyData && Array.isArray(tool.realDailyData) && tool.realDailyData.length > 0) {
     const rawList = tool.realDailyData;
     const targetSlice = currentTimeFilter === '24h' ? rawList.slice(-8) : currentTimeFilter === '7d' ? rawList.slice(-7) : rawList.slice(-30);
     
@@ -418,7 +433,7 @@ function renderSVGChart(tool) {
       return { label: `${m}/${date}(${dayName})`, isWeekend };
     });
   } else {
-    // B. モック/ベースデータの場合の推移計算
+    // C. モック/ベースデータの場合の自然推移計算
     const rawTrendData = tool.trendData || [50, 52, 55, 53, 58, 60, 65, 68, tool.trendScore];
     let pointsCount = currentTimeFilter === '24h' ? 8 : currentTimeFilter === '7d' ? 7 : 10;
     let baseUnitMentions = Math.round(totalMentions / (currentTimeFilter === '24h' ? 8 : currentTimeFilter === '7d' ? 7 : 30));

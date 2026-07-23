@@ -1,0 +1,12 @@
+name = "etools-trend"
+pages_build_output_dir = "./"
+
+# Cloudflare D1 データベースバインディング (完全無料枠内運用)
+[[d1_databases]]
+binding = "DB"
+database_name = "etools_trend_db"
+database_id = "etools_trend_db_id"
+
+# 毎日日本時間午前0時 (UTC 15:00) に自動実行する Cron Trigger
+[triggers]
+crons = ["0 15 * * *"]

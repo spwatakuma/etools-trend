@@ -190,6 +190,11 @@
           <h3>過去累計の除外 & タイムウィンドウ集計</h3>
           <p>「過去数年間の記事蓄積数」や「全期間累計Star」などの過去遺産データはトレンドを歪めるため<strong>完全に排除</strong>。選択された期間内（24h/7d/30d）に新しく発生した新規データのみを厳格に集計・視覚化します。</p>
         </div>
+        <div class="methodology-card">
+          <div class="card-num">05</div>
+          <h3>Cloudflare D1 による日次実測自動保存</h3>
+          <p>毎日0時にCron処理で公式APIから「本日の実測値」をフェッチし、<strong>Cloudflare D1 無料データベース</strong>へ自動記録。推測や合成数式を排除し、蓄積された本物の実測値のみをグラフ表示します。</p>
+        </div>
       </div>
     </section>
 
