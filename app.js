@@ -1,4 +1,4 @@
-import { categories, toolsData as baseToolsData } from './data.js';
+import { categories, toolsData as baseToolsData } from './data.js?v=20260723_v3';
 
 // --- アプリケーションの状態管理 (State) ---
 let currentCategory = 'all';

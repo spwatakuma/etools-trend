@@ -1,6 +1,4 @@
 // Cloudflare Pages ルート直下ルーター (_worker.js)
-// /api/trends, /api/cron への全リクエストを捕捉し、Cloudflare D1 (env.DB) へ直接クエリ発行
-
 import { toolsData as baseToolsData } from './data.js';
 
 const activeTrendMappings = {
@@ -48,7 +46,6 @@ export default {
 
       if (db) {
         try {
-          // テーブル自動初期化
           await db.prepare(`
             CREATE TABLE IF NOT EXISTS daily_trends (
               tool_id TEXT NOT NULL,
@@ -165,7 +162,15 @@ export default {
       });
     }
 
-    // 静的ファイル（HTML, CSS, JS等）のデフォルト配信
-    return env.ASSETS.fetch(request);
+    // 静的ファイルアクセスのキャッシュ無効化ヘッダーを注入
+    const assetRes = await env.ASSETS.fetch(request);
+    const newHeaders = new Headers(assetRes.headers);
+    newHeaders.set("Cache-Control", "no-cache, no-store, must-revalidate");
+
+    return new Response(assetRes.body, {
+      status: assetRes.status,
+      statusText: assetRes.statusText,
+      headers: newHeaders
+    });
   }
 };
