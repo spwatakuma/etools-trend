@@ -237,6 +237,14 @@ export async function onRequestGet(context) {
       tool.mentions24h = Math.max(10, Math.round(hnMentions * 1.8 + githubStars * 0.5));
       tool.mentions7d = Math.max(50, Math.round(hnMentions * 10 + githubStars * 3));
       tool.mentions30d = Math.max(200, Math.round(hnMentions * 40 + githubStars * 12));
+    } else if (!tool.d1DailyHistory || tool.d1DailyHistory.length === 0) {
+      // 直近アクティビティが一切確認されない過去・非アクティブツールは固定初期スコアを全剥奪し最下位へ強制降格
+      tool.trendScore = 15;
+      tool.changePercent = -20.0;
+      tool.mentions24h = 0;
+      tool.mentions7d = 5;
+      tool.mentions30d = 20;
+      tool.weightedBreakdown = { googleTrends: 5, github: 5, hackerNews: 0, reddit: 0, npm: 0 };
     }
   });
 
