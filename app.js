@@ -32,18 +32,20 @@ const tooltip = document.getElementById('tooltip');
 async function init() {
   setupEventListeners();
   
-  // 1. Cloudflare Pages Functions APIからリアルタイムデータを取得
+  // 1. Cloudflare Pages Functions / Worker APIからリアルタイムデータを取得
   try {
-    const response = await fetch('/api/trends', { signal: AbortSignal.timeout(5000) });
+    const response = await fetch(`/api/trends?t=${Date.now()}`, { 
+      cache: 'no-store',
+      signal: AbortSignal.timeout(5000) 
+    });
     if (response.ok) {
       activeToolsData = await response.json();
       console.log('Successfully fetched real-time trends from Cloudflare Pages Functions.');
     } else {
-      throw new Error('API response was not OK');
+      throw new Error(`API error HTTP ${response.status}`);
     }
   } catch (error) {
-    // APIが動作していない場合やローカル環境時は、ベースデータをフォールバック使用
-    console.warn('API fetch failed. Falling back to local data:', error);
+    console.error('API fetch error:', error);
     activeToolsData = baseToolsData;
   }
 
