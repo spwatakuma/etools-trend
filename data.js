@@ -74,8 +74,10 @@ function c(id, name, cat, score, changePercent, baseMentions, desc, isAff = fals
 }
 
 export const toolsData = [
-  // ==================== AI Assistants (30個) ====================
-  c("claude-fable-5", "Claude Fable 5", "ai_assistants", 99, 28.4, 91000, "論理的思考と自律デバッグにおいて圧倒的精度を誇るAnthropicの最新フラッグシップモデル。", false, "", "https://www.anthropic.com/claude"),
+  // ==================== AI Assistants & LLMs ====================
+  c("gemini-3-6-flash", "Gemini 3.6 Flash", "ai_assistants", 99, 45.2, 125000, "Googleの最新超高速マルチモーダル推論モデル。圧倒的スピードと高度なコード生成能を両立。"),
+  c("deepseek-v3", "DeepSeek-V3", "llm_models", 98, 38.6, 118000, "オープンソース界を驚愕させた671Bパラメータの超高性能MoE最新LLM。"),
+  c("claude-fable-5", "Claude Fable 5", "ai_assistants", 97, 28.4, 91000, "論理的思考と自律デバッグにおいて圧倒的精度を誇るAnthropicの最新フラッグシップモデル。", false, "", "https://www.anthropic.com/claude"),
   c("cursor", "Cursor", "ai_assistants", 96, 18.2, 98000, "コードベース全体を多次元インデックスし、自律修正を行うAI-first IDEの代表格。", false, "", "https://www.cursor.com/"),
   c("windsurf", "Windsurf", "ai_assistants", 92, 24.5, 59000, "「Flows」機能で複数ファイルのエージェント編集を爆速化させたCursor最大のライバルAI IDE。", false, "", "https://codeium.com/windsurf"),
   c("github-copilot", "GitHub Copilot", "ai_assistants", 82, -2.1, 260000, "エディタ統合型コード補完の草分け。巨大なエンタープライズ導入シェアを誇る。"),

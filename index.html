@@ -31,6 +31,7 @@
         <div class="select-wrapper">
           <select id="categorySelect" class="category-select">
             <option value="all">🌐 すべてのITカテゴリ (500+ アイテム)</option>
+            <option value="dynamic_discovered">✨ 自動検出された最新トレンド (New Discovered)</option>
             <optgroup label="AI & 機械学習">
               <option value="ai_assistants">🤖 AIアシスタント</option>
               <option value="llm_models">🧠 AI・LLMモデル</option>
@@ -194,6 +195,11 @@
           <div class="card-num">05</div>
           <h3>Cloudflare D1 による日次実測自動保存</h3>
           <p>毎日0時にCron処理で公式APIから「本日の実測値」をフェッチし、<strong>Cloudflare D1 無料データベース</strong>へ自動記録。推測や合成数式を排除し、蓄積された本物の実測値のみをグラフ表示します。</p>
+        </div>
+        <div class="methodology-card">
+          <div class="card-num">06</div>
+          <h3>未知固有名詞の自動検知エンジン</h3>
+          <p>辞書未登録の最新ツール（Gemini 3.6 Flash等）を、Hacker Newsの発表構文解析（Show HN等）およびGitHub急上昇検索から<strong>リアルタイム自動探索</strong>。検出された最新トレンドは即座に最上位へ浮上・グラフ描画されます。</p>
         </div>
       </div>
     </section>

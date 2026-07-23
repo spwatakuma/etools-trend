@@ -166,12 +166,14 @@ function getMomentumIntensityClass(changePercent) {
   return 'intensity-down-4';                    // 濃い赤
 }
 
-// --- ヒートマップ (ツリーマップ) のレンダリング ---
+// --- ヒートマップ (ツリーマップ) のレンダリング (大容量データ描画パフォーマンス最適化版) ---
 function renderHeatmap() {
   let filtered = [...activeToolsData];
   
-  // 1. カテゴリ絞り込み
-  if (currentCategory !== 'all') {
+  // 1. カテゴリ絞り込み (✨ 自動検出トレンド への切り替え対応)
+  if (currentCategory === 'dynamic_discovered') {
+    filtered = filtered.filter(tool => tool.isDynamic);
+  } else if (currentCategory !== 'all') {
     filtered = filtered.filter(tool => tool.category === currentCategory);
   }
 
@@ -203,7 +205,13 @@ function renderHeatmap() {
 
   layoutTreemap(filtered, 0, 0, 100, 100, true);
 
+  // 高速 DOM 描画用 Fragment
+  const fragment = document.createDocumentFragment();
+
   filtered.forEach(tool => {
+    // 描画領域が極めて小さすぎるセルの計算負荷を軽減
+    if (tool.w < 1.5 && tool.h < 1.5) return;
+
     const cell = document.createElement('div');
     const intensity = getMomentumIntensityClass(tool.changePercent);
     cell.className = `heatmap-cell ${intensity}`;
@@ -229,7 +237,7 @@ function renderHeatmap() {
     const isSmall = tool.w < 12 || tool.h < 12;
     const isTiny = tool.w < 7 || tool.h < 7;
 
-    const prefix = tool.isAffiliate ? '🛒 ' : '';
+    const prefix = tool.isAffiliate ? '🛒 ' : tool.isDynamic ? '✨ ' : '';
 
     if (isTiny) {
       cell.innerHTML = `
@@ -240,8 +248,9 @@ function renderHeatmap() {
         <span class="cell-name" style="font-size: 0.7rem; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; display: block;">${prefix}${tool.name}</span>
       `;
     } else {
+      const dynamicBadge = tool.isDynamic ? '<span style="font-size:0.6rem; background:#8b5cf6; color:#fff; padding:1px 4px; border-radius:3px; margin-left:3px;">NEW</span>' : '';
       cell.innerHTML = `
-        <span class="cell-name">${prefix}${tool.name}</span>
+        <span class="cell-name">${prefix}${tool.name}${dynamicBadge}</span>
         <span class="cell-score" style="font-size: 0.9rem;">${changeText}</span>
       `;
     }
@@ -252,7 +261,7 @@ function renderHeatmap() {
     // ツールチップ用ホバーイベント
     cell.addEventListener('mouseenter', (e) => {
       tooltip.style.opacity = '1';
-      const typeStr = tool.isAffiliate ? '（ガジェット・パーツ）' : '';
+      const typeStr = tool.isAffiliate ? '（ガジェット・パーツ）' : tool.isDynamic ? '（✨ 自動検知最新トレンド）' : '';
       tooltip.innerHTML = `<strong>${tool.name} ${typeStr}</strong><br>期間中: ${mentions}言及 (${currentTimeFilter})<br>前週比モメンタム: <strong>${changeText}</strong>`;
       positionTooltip(e);
     });
@@ -265,11 +274,13 @@ function renderHeatmap() {
       tooltip.style.opacity = '0';
     });
 
-    heatmapGrid.appendChild(cell);
+    fragment.appendChild(cell);
   });
 
+  heatmapGrid.appendChild(fragment);
+
   // タイトルの更新
-  const catName = currentCategory === 'all' ? 'すべてのITカテゴリ (500+)' : categories[currentCategory];
+  const catName = currentCategory === 'all' ? 'すべてのITカテゴリ (500+)' : currentCategory === 'dynamic_discovered' ? '✨ 自動検出された最新トレンド (New Discovered)' : (categories[currentCategory] || currentCategory);
   panelCategoryTitle.innerHTML = `
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
     ${catName} の勢いヒートマップ
